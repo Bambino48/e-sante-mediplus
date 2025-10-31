@@ -11,6 +11,7 @@ import {
     User,
     ClipboardList,
 } from "lucide-react";
+import Sidebar from "../../components/Sidebar.jsx"; // ✅ Import de la Sidebar
 
 export default function PatientDashboard() {
     const shortcuts = [
@@ -59,67 +60,83 @@ export default function PatientDashboard() {
     ];
 
     return (
-        <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
-            <h1 className="text-2xl font-semibold mb-4">Bienvenue sur votre espace patient 👋</h1>
+        <div className="flex min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors duration-300">
+            {/* === Sidebar à gauche === */}
+            <Sidebar section="patient" className="border-r border-slate-200 dark:border-slate-800" />
 
-            {/* === Statistiques principales === */}
-            <div className="grid md:grid-cols-3 gap-4">
-                <div className="card">
-                    <div className="text-sm text-slate-500">Prochain rendez-vous</div>
-                    <div className="mt-1 font-medium">Demain • 10h30 avec Dr Kouassi</div>
-                    <Link className="btn-secondary mt-3 w-full" to="/booking">
-                        Voir mes rendez-vous
-                    </Link>
+            {/* === Contenu principal === */}
+            <main className="flex-1 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
+                <h1 className="text-2xl font-semibold mb-4 text-slate-800 dark:text-slate-100">
+                    Bienvenue sur votre espace patient 👋
+                </h1>
+
+                {/* === Statistiques principales === */}
+                <div className="grid md:grid-cols-3 gap-4">
+                    <div className="card">
+                        <div className="text-sm text-slate-500">Prochain rendez-vous</div>
+                        <div className="mt-1 font-medium">Demain • 10h30 avec Dr Kouassi</div>
+                        <Link className="btn-secondary mt-3 w-full" to="/booking">
+                            Voir mes rendez-vous
+                        </Link>
+                    </div>
+
+                    <div className="card">
+                        <div className="text-sm text-slate-500">Médicaments du jour</div>
+                        <ul className="mt-2 text-sm list-disc ml-5">
+                            <li>Paracétamol 500mg — 08:00</li>
+                            <li>Atorvastatine 20mg — 21:00</li>
+                        </ul>
+                        <Link className="btn-secondary mt-3 w-full" to="/patient/prescriptions">
+                            Voir mes ordonnances
+                        </Link>
+                    </div>
+
+                    <div className="card">
+                        <div className="text-sm text-slate-500">Notifications</div>
+                        <div className="mt-2 text-sm">2 nouveaux messages non lus</div>
+                        <Link className="btn-secondary mt-3 w-full" to="/notifications">
+                            Ouvrir
+                        </Link>
+                    </div>
                 </div>
 
-                <div className="card">
-                    <div className="text-sm text-slate-500">Médicaments du jour</div>
-                    <ul className="mt-2 text-sm list-disc ml-5">
-                        <li>Paracétamol 500mg — 08:00</li>
-                        <li>Atorvastatine 20mg — 21:00</li>
-                    </ul>
-                    <Link className="btn-secondary mt-3 w-full" to="/patient/prescriptions">
-                        Voir mes ordonnances
-                    </Link>
-                </div>
-
-                <div className="card">
-                    <div className="text-sm text-slate-500">Notifications</div>
-                    <div className="mt-2 text-sm">2 nouveaux messages non lus</div>
-                    <Link className="btn-secondary mt-3 w-full" to="/notifications">
-                        Ouvrir
-                    </Link>
-                </div>
-            </div>
-
-            {/* === Raccourcis rapides === */}
-            <div className="mt-10">
-                <h2 className="text-lg font-semibold mb-4">Actions rapides</h2>
-                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {shortcuts.map((item, i) => (
-                        <motion.div
-                            key={i}
-                            whileHover={{ scale: 1.03 }}
-                            transition={{ duration: 0.2 }}
-                            className={`card border-t-4 bg-white dark:bg-slate-900 border-gradient-to-r ${item.color}`}
-                        >
-                            <div className="flex items-start gap-3">
-                                <div className="p-3 bg-cyan-50 dark:bg-slate-800 rounded-xl">{item.icon}</div>
-                                <div>
-                                    <h3 className="font-semibold">{item.title}</h3>
-                                    <p className="text-sm text-slate-500 dark:text-slate-400">{item.description}</p>
-                                    <Link
-                                        to={item.link}
-                                        className="text-cyan-600 text-sm font-medium hover:underline mt-2 inline-block"
-                                    >
-                                        Ouvrir →
-                                    </Link>
+                {/* === Raccourcis rapides === */}
+                <div className="mt-10">
+                    <h2 className="text-lg font-semibold mb-4 text-slate-800 dark:text-slate-100">
+                        Actions rapides
+                    </h2>
+                    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {shortcuts.map((item, i) => (
+                            <motion.div
+                                key={i}
+                                whileHover={{ scale: 1.03 }}
+                                transition={{ duration: 0.2 }}
+                                className={`card border-t-4 bg-white dark:bg-slate-900 border-gradient-to-r ${item.color}`}
+                            >
+                                <div className="flex items-start gap-3">
+                                    <div className="p-3 bg-cyan-50 dark:bg-slate-800 rounded-xl">
+                                        {item.icon}
+                                    </div>
+                                    <div>
+                                        <h3 className="font-semibold text-slate-800 dark:text-slate-100">
+                                            {item.title}
+                                        </h3>
+                                        <p className="text-sm text-slate-500 dark:text-slate-400">
+                                            {item.description}
+                                        </p>
+                                        <Link
+                                            to={item.link}
+                                            className="text-cyan-600 text-sm font-medium hover:underline mt-2 inline-block"
+                                        >
+                                            Ouvrir →
+                                        </Link>
+                                    </div>
                                 </div>
-                            </div>
-                        </motion.div>
-                    ))}
+                            </motion.div>
+                        ))}
+                    </div>
                 </div>
-            </div>
-        </main>
+            </main>
+        </div>
     );
 }
