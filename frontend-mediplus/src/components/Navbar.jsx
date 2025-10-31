@@ -167,7 +167,15 @@ export default function Navbar() {
                             >
                                 <LayoutDashboard className="h-4 w-4" /> Dashboard
                             </Link>
-                            <button onClick={logout} className="btn-ghost flex items-center gap-1">
+
+                            {/* ✅ Correction : déconnexion avec redirection */}
+                            <button
+                                onClick={async () => {
+                                    await logout();
+                                    navigate("/"); // ✅ Redirige vers la page d’accueil
+                                }}
+                                className="btn-ghost flex items-center gap-1"
+                            >
                                 <LogOut className="h-4 w-4" /> Déconnexion
                             </button>
                         </div>
@@ -209,9 +217,10 @@ export default function Navbar() {
                             </div>
                         ) : (
                             <button
-                                onClick={() => {
+                                onClick={async () => {
                                     setMenuOpen(false);
-                                    logout();
+                                    await logout();
+                                    navigate("/"); // ✅ Redirige aussi sur mobile
                                 }}
                                 className="btn-ghost w-full flex items-center justify-center gap-1"
                             >

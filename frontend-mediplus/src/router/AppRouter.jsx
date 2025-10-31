@@ -5,6 +5,7 @@ import Navbar from "../components/Navbar.jsx"; // ✅ ajouté
 import PatientHome from "../pages/patient/Home.jsx";
 import PatientDashboard from "../pages/patient/Dashboard.jsx";
 import Profile from "../pages/patient/Profile.jsx";
+import DashboardContainer from "../pages/patient/DashboardContainer.jsx";
 
 // 👨‍⚕️ Professionnel
 import ProDashboard from "../pages/pro/Dashboard.jsx";
@@ -59,6 +60,7 @@ export default function AppRouter() {
                 <Route path="/triage" element={<Triage />} />
                 <Route path="/doctor/:id" element={<Doctor />} />
                 <Route path="/patient/profile" element={<Profile />} />
+                <Route path="/patient/dashboard" element={<DashboardContainer />} />
 
                 <Route
                     path="/patient/dashboard"
