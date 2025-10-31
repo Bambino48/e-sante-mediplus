@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use App\Models\User;
 
 class AuthController extends Controller
@@ -70,7 +71,7 @@ class AuthController extends Controller
         return response()->json(['user' => $request->user()]);
     }
 
-    // ✅ Mise à jour du profil
+    // ✅ Mise à jour du profil (avec upload photo propre)
     public function updateProfile(Request $request)
     {
         $user = $request->user();
@@ -78,15 +79,38 @@ class AuthController extends Controller
         $validated = $request->validate([
             'name' => 'sometimes|string|max:100',
             'phone' => 'sometimes|string|max:20',
-            'photo' => 'sometimes|string|nullable',
+            'photo' => 'sometimes|nullable|string', // Base64 encodé ou chemin
             'latitude' => 'nullable|numeric',
             'longitude' => 'nullable|numeric',
         ]);
 
+        // 🔹 Gestion de la photo (Base64 -> stockage fichier)
+        if ($request->filled('photo') && str_starts_with($request->photo, 'data:image')) {
+            // Extraire l’extension du fichier
+            preg_match('/^data:image\/(\w+);base64,/', $request->photo, $type);
+            $extension = $type[1] ?? 'jpg';
+            $image = substr($request->photo, strpos($request->photo, ',') + 1);
+            $image = str_replace(' ', '+', $image);
+
+            // Nom unique du fichier
+            $fileName = 'profile_' . $user->id . '_' . time() . '.' . $extension;
+
+            // Stockage dans storage/app/public/photos/
+            Storage::disk('public')->put('photos/' . $fileName, base64_decode($image));
+
+            // Suppression de l’ancienne photo si existante
+            if ($user->photo && Storage::disk('public')->exists($user->photo)) {
+                Storage::disk('public')->delete($user->photo);
+            }
+
+            // Enregistrement du chemin relatif
+            $validated['photo'] = 'photos/' . $fileName;
+        }
+
         $user->update($validated);
 
         return response()->json([
-            'message' => 'Profil mis à jour.',
+            'message' => 'Profil mis à jour avec succès.',
             'user' => $user,
         ]);
     }

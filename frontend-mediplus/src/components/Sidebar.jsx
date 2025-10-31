@@ -1,7 +1,7 @@
-// src/components/Sidebar.jsx
 import { NavLink } from "react-router-dom";
 import { useUIStore } from "../store/uiStore.js";
 import { Fragment } from "react";
+import { useAuth } from "../hooks/useAuth.js";
 import {
     ChevronLeft,
     ChevronRight,
@@ -20,7 +20,7 @@ import {
     Shield,
     Hospital,
     DollarSign,
-} from "lucide-react"; // ✅ Icônes modernes
+} from "lucide-react";
 
 const baseLink =
     "flex items-center gap-2 px-3 py-2 rounded-xl text-sm cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition";
@@ -30,40 +30,48 @@ const active =
 export default function Sidebar({
     section = "patient",
     className = "",
-    setActiveView, // ✅ Permet d'afficher directement un composant
+    setActiveView,
     activeView,
 }) {
     const { sidebarOpen, toggleSidebar } = useUIStore();
+    const { user } = useAuth();
     const groups = getGroupsBySection(section);
 
     const handleClick = (item) => {
-        // ✅ Si on veut navigation interne : setActiveView()
-        if (setActiveView) {
-            setActiveView(item.key);
-        }
+        if (setActiveView) setActiveView(item.key);
     };
+
+    // ✅ Détermination de la photo de profil
+    const photoUrl =
+        user?.photo && !user.photo.startsWith("data:image")
+            ? `${import.meta.env.VITE_API_URL || "http://localhost:8000"}/storage/${user.photo}`
+            : user?.photo || "https://cdn-icons-png.flaticon.com/512/847/847969.png";
 
     return (
         <aside
-            className={`transition-all duration-300 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 shadow-sm ${sidebarOpen ? "w-64" : "w-16"
+            className={`relative flex flex-col justify-between bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 shadow-sm transition-all duration-300 ${sidebarOpen ? "w-64" : "w-16"
                 } ${className}`}
         >
-            <div className="sticky top-0 p-3 flex flex-col h-screen">
-                {/* ✅ Bouton icône pour ouvrir/réduire */}
-                <button
-                    onClick={toggleSidebar}
-                    className="mb-4 flex items-center justify-center rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 p-2"
-                    title={sidebarOpen ? "Réduire" : "Ouvrir"}
-                >
-                    {sidebarOpen ? (
-                        <ChevronLeft className="h-5 w-5 text-slate-600 dark:text-slate-300" />
-                    ) : (
-                        <ChevronRight className="h-5 w-5 text-slate-600 dark:text-slate-300" />
-                    )}
-                </button>
+            {/* === Haut : Photo + navigation === */}
+            <div className="p-3 flex flex-col flex-1 overflow-y-auto">
+                {/* ✅ Photo (agrandie et masquée en mode réduit) */}
+                {sidebarOpen && (
+                    <div className="flex flex-col items-center mb-8">
+                        <div className="relative">
+                            <img
+                                src={photoUrl}
+                                alt="Profil"
+                                className="h-24 w-24 rounded-full object-cover border-4 border-cyan-500 shadow-lg transition-transform duration-300 hover:scale-105"
+                            />
+                        </div>
+                        <p className="mt-3 text-sm font-medium text-slate-700 dark:text-slate-200 text-center truncate max-w-40">
+                            {user?.name || "Utilisateur"}
+                        </p>
+                    </div>
+                )}
 
                 {/* ✅ Navigation */}
-                <nav className="space-y-4 overflow-y-auto">
+                <nav className="space-y-4">
                     {groups.map((g) => (
                         <Fragment key={g.title}>
                             {sidebarOpen && (
@@ -73,8 +81,7 @@ export default function Sidebar({
                             )}
                             <div className="mt-1 space-y-1">
                                 {g.items.map((it) => {
-                                    const isActive =
-                                        activeView === it.key || false;
+                                    const isActive = activeView === it.key || false;
                                     return setActiveView ? (
                                         <div
                                             key={it.key}
@@ -109,6 +116,21 @@ export default function Sidebar({
                         </Fragment>
                     ))}
                 </nav>
+            </div>
+
+            {/* === Bas : Bouton réduire/agrandir toujours visible === */}
+            <div className="sticky bottom-0 left-0 w-full p-3 border-t border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm">
+                <button
+                    onClick={toggleSidebar}
+                    className="w-full flex items-center justify-center rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 p-2 transition"
+                    title={sidebarOpen ? "Réduire" : "Ouvrir"}
+                >
+                    {sidebarOpen ? (
+                        <ChevronLeft className="h-5 w-5 text-slate-600 dark:text-slate-300" />
+                    ) : (
+                        <ChevronRight className="h-5 w-5 text-slate-600 dark:text-slate-300" />
+                    )}
+                </button>
             </div>
         </aside>
     );
@@ -158,7 +180,7 @@ function getGroupsBySection(section) {
         ];
     }
 
-    // ✅ Patient par défaut (amélioré)
+    // ✅ Patient par défaut
     return [
         {
             title: "Patient",

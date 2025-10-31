@@ -1,5 +1,3 @@
-/* eslint-disable no-unused-vars */
-// src/pages/patient/Profile.jsx
 import { useState, useEffect } from "react";
 import { useAuth } from "../../hooks/useAuth";
 import { toast } from "react-hot-toast";
@@ -25,10 +23,10 @@ export default function PatientProfile() {
         photo: "",
     });
 
-    const [tracking, setTracking] = useState(false);
+    const [preview, setPreview] = useState(""); // ✅ pour prévisualisation locale
     const [showMap, setShowMap] = useState(false);
 
-    // ✅ Remplit le formulaire avec les infos actuelles
+    // ✅ Préremplir les données
     useEffect(() => {
         if (user) {
             setForm({
@@ -39,43 +37,44 @@ export default function PatientProfile() {
                 longitude: user.longitude || "",
                 photo: user.photo || "",
             });
+
+            // ✅ Construction de l’URL complète de la photo (si chemin en base)
+            if (user.photo && !user.photo.startsWith("data:image")) {
+                setPreview(`${import.meta.env.VITE_API_URL || "http://localhost:8000"}/storage/${user.photo}`);
+            } else if (user.photo) {
+                setPreview(user.photo);
+            } else {
+                setPreview("https://cdn-icons-png.flaticon.com/512/847/847969.png");
+            }
         }
     }, [user]);
 
-    // ✅ Récupération géolocalisation
+    // ✅ Géolocalisation (non intrusive)
     useEffect(() => {
-        let watchId;
-        if ("geolocation" in navigator) {
-            watchId = navigator.geolocation.watchPosition(
-                (position) => {
-                    const { latitude, longitude } = position.coords;
-                    setForm((prev) => ({ ...prev, latitude, longitude }));
-                },
-                (error) => {
-                    console.warn("Erreur géolocalisation :", error.message);
-                    toast.error("Impossible de récupérer la position GPS.");
-                },
-                { enableHighAccuracy: true, maximumAge: 10000, timeout: 15000 }
-            );
-            setTracking(true);
-        } else {
-            toast.error("La géolocalisation n'est pas supportée par votre navigateur.");
-        }
-        return () => {
-            if (watchId) navigator.geolocation.clearWatch(watchId);
-        };
+        if (!("geolocation" in navigator)) return;
+        const watchId = navigator.geolocation.watchPosition(
+            (pos) => {
+                const { latitude, longitude } = pos.coords;
+                setForm((prev) => ({ ...prev, latitude, longitude }));
+            },
+            (err) => {
+                console.warn("Erreur géolocalisation :", err.message);
+            },
+            { enableHighAccuracy: true, maximumAge: 10000, timeout: 15000 }
+        );
+        return () => navigator.geolocation.clearWatch(watchId);
     }, []);
 
-    // ✅ Gestion du téléchargement de la photo
+    // ✅ Gestion du téléchargement et prévisualisation
     const handlePhotoChange = (e) => {
         const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setForm((prev) => ({ ...prev, photo: reader.result }));
-            };
-            reader.readAsDataURL(file);
-        }
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            setForm((prev) => ({ ...prev, photo: reader.result }));
+            setPreview(reader.result); // ✅ Affiche directement l’image
+        };
+        reader.readAsDataURL(file);
     };
 
     // ✅ Soumission du formulaire
@@ -110,10 +109,7 @@ export default function PatientProfile() {
                 <div className="flex flex-col items-center justify-center p-6 bg-white dark:bg-slate-900 rounded-xl shadow border border-slate-200 dark:border-slate-700">
                     <div className="relative">
                         <img
-                            src={
-                                form.photo ||
-                                "https://cdn-icons-png.flaticon.com/512/847/847969.png"
-                            }
+                            src={preview}
                             alt="Profil"
                             className="h-28 w-28 rounded-full object-cover border-4 border-cyan-500 shadow-md"
                         />
@@ -136,7 +132,7 @@ export default function PatientProfile() {
                     </p>
                 </div>
 
-                {/* ✅ Champs infos utilisateur */}
+                {/* ✅ Infos utilisateur */}
                 <div className="space-y-4">
                     <input
                         className="input"
@@ -207,7 +203,6 @@ export default function PatientProfile() {
                     </div>
                 )}
 
-                {/* ✅ Bouton mise à jour */}
                 <button type="submit" className="btn-primary w-full mt-4">
                     Mettre à jour
                 </button>
