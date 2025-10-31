@@ -28,5 +28,39 @@ class User extends Authenticatable
 
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'latitude' => 'float',
+        'longitude' => 'float',
     ];
+
+    /**
+     * ✅ Relation : un utilisateur (doctor) possède un profil médecin
+     */
+    public function doctorProfile()
+    {
+        return $this->hasOne(DoctorProfile::class, 'user_id', 'id');
+    }
+
+    /**
+     * ✅ Vérifie si l’utilisateur est un médecin
+     */
+    public function isDoctor(): bool
+    {
+        return $this->role === 'doctor';
+    }
+
+    /**
+     * ✅ Vérifie si l’utilisateur est un patient
+     */
+    public function isPatient(): bool
+    {
+        return $this->role === 'patient';
+    }
+
+    /**
+     * ✅ Vérifie si l’utilisateur est un administrateur
+     */
+    public function isAdmin(): bool
+    {
+        return $this->role === 'admin';
+    }
 }
