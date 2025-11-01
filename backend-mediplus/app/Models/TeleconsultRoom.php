@@ -4,16 +4,20 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Payment extends Model
+class TeleconsultRoom extends Model
 {
     protected $fillable = [
-        'patient_id',
+        'room_id',
         'doctor_id',
-        'appointment_id',
-        'amount',
+        'patient_id',
         'status',
-        'provider',
-        'reference'
+        'started_at',
+        'ended_at'
+    ];
+
+    protected $casts = [
+        'started_at' => 'datetime',
+        'ended_at' => 'datetime',
     ];
 
     public function doctor()
@@ -23,9 +27,5 @@ class Payment extends Model
     public function patient()
     {
         return $this->belongsTo(User::class, 'patient_id');
-    }
-    public function appointment()
-    {
-        return $this->belongsTo(Appointment::class);
     }
 }

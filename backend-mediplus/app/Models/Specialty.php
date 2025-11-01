@@ -2,28 +2,14 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Specialty extends Model
 {
-    use HasFactory;
+    protected $fillable = ['name'];
 
-    protected $fillable = [
-        'name',
-        'description',
-        'icon_url',
-    ];
-
-    // Relations
     public function doctors()
     {
-        return $this->hasMany(DoctorProfile::class, 'specialty', 'name');
-    }
-
-    // Accesseurs
-    public function getDoctorCountAttribute()
-    {
-        return $this->doctors()->count();
+        return $this->belongsToMany(User::class, 'doctor_specialty', 'specialty_id', 'doctor_id');
     }
 }

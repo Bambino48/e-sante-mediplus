@@ -4,20 +4,20 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Availability extends Model
+class Billing extends Model
 {
     protected $fillable = [
         'doctor_id',
-        'is_recurring',
-        'day_of_week',
-        'start_time',
-        'end_time',
-        'date'
+        'period_start',
+        'period_end',
+        'total_amount',
+        'paid_at'
     ];
 
     protected $casts = [
-        'is_recurring' => 'boolean',
-        'date' => 'date',
+        'period_start' => 'date',
+        'period_end' => 'date',
+        'paid_at' => 'datetime',
     ];
 
     public function doctor()
