@@ -10,25 +10,30 @@ class DoctorProfile extends Model
     use HasFactory;
 
     protected $fillable = [
-        'user_id',
+        'doctor_id',
         'specialty',
-        'city',
-        'address',
-        'phone',
-        'latitude',
-        'longitude',
-        'fees',
         'bio',
-        'availability',
-        'rating',
+        'license_number',
+        'experience_years',
+        'consultation_fee',
+        'avatar_url',
+        'verified',
     ];
 
     protected $casts = [
-        'availability' => 'array',
+        'verified' => 'boolean',
+        'experience_years' => 'integer',
+        'consultation_fee' => 'decimal:2',
     ];
 
-    public function user()
+    // Relations
+    public function doctor()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'doctor_id');
+    }
+
+    public function specialty()
+    {
+        return $this->belongsTo(Specialty::class, 'specialty', 'name');
     }
 }
