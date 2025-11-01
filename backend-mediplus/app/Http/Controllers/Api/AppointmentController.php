@@ -4,92 +4,63 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Appointment;
-use App\Models\Availability;
 use Illuminate\Http\Request;
 
 class AppointmentController extends Controller
 {
+    // GET /api/patient/appointments
+    public function index(Request $request)
+    {
+        $user = $request->user();
+        if (!$user->isPatient()) {
+            return response()->json(['message' => 'Accès refusé'], 403);
+        }
+
+        $appointments = Appointment::where('patient_id', $user->id)
+            ->with('doctor')
+            ->orderByDesc('scheduled_at')
+            ->get();
+
+        return response()->json(['appointments' => $appointments]);
+    }
+
+    // POST /api/patient/appointments
     public function store(Request $request)
     {
         $user = $request->user();
-
-        if ($user->role !== 'patient') {
-            return response()->json(['message' => 'Only patients can book appointments'], 403);
+        if (!$user->isPatient()) {
+            return response()->json(['message' => 'Accès refusé'], 403);
         }
 
-        $validated = $request->validate([
+        $data = $request->validate([
             'doctor_id' => 'required|exists:users,id',
-            'availability_id' => 'required|exists:availabilities,id',
-            'reason' => 'required|string',
+            'scheduled_at' => 'required|date',
+            'reason' => 'nullable|string',
         ]);
-
-        $availability = Availability::findOrFail($validated['availability_id']);
-
-        if ($availability->doctor_id !== $validated['doctor_id']) {
-            return response()->json(['message' => 'Invalid availability'], 422);
-        }
 
         $appointment = Appointment::create([
             'patient_id' => $user->id,
-            'doctor_id' => $validated['doctor_id'],
-            'availability_id' => $validated['availability_id'],
-            'reason' => $validated['reason'],
-            'status' => 'pending',
+            'doctor_id' => $data['doctor_id'],
+            'scheduled_at' => $data['scheduled_at'],
+            'reason' => $data['reason'] ?? null,
         ]);
 
-        return response()->json(['appointment' => $appointment], 201);
+        return response()->json(['message' => 'Rendez-vous réservé', 'appointment' => $appointment], 201);
     }
 
-    public function patientList(Request $request)
-    {
-        $appointments = Appointment::where('patient_id', $request->user()->id)
-            ->with('doctor', 'availability')
-            ->paginate(15);
-
-        return response()->json(['appointments' => $appointments]);
-    }
-
-    public function doctorList(Request $request)
-    {
-        $appointments = Appointment::where('doctor_id', $request->user()->id)
-            ->with('patient', 'availability')
-            ->paginate(15);
-
-        return response()->json(['appointments' => $appointments]);
-    }
-
+    // POST /api/pro/appointments/{id}/confirm
     public function confirm(Request $request, $id)
     {
         $user = $request->user();
-        $appointment = Appointment::findOrFail($id);
-
-        if ($appointment->doctor_id !== $user->id) {
-            return response()->json(['message' => 'Unauthorized'], 403);
+        if (!$user->isDoctor()) {
+            return response()->json(['message' => 'Accès refusé'], 403);
         }
+
+        $appointment = Appointment::where('id', $id)
+            ->where('doctor_id', $user->id)
+            ->firstOrFail();
 
         $appointment->update(['status' => 'confirmed']);
-
-        return response()->json(['appointment' => $appointment]);
-    }
-
-    public function reject(Request $request, $id)
-    {
-        $user = $request->user();
-        $appointment = Appointment::findOrFail($id);
-
-        if ($appointment->doctor_id !== $user->id) {
-            return response()->json(['message' => 'Unauthorized'], 403);
-        }
-
-        $appointment->update(['status' => 'rejected']);
-
-        return response()->json(['appointment' => $appointment]);
-    }
-
-    public function show($id)
-    {
-        $appointment = Appointment::with('doctor', 'patient', 'availability')->findOrFail($id);
-
-        return response()->json(['appointment' => $appointment]);
+        return response()->json(['message' => 'Rendez-vous confirmé', 'appointment' => $appointment]);
     }
 }

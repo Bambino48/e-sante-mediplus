@@ -8,72 +8,42 @@ use Illuminate\Http\Request;
 
 class AvailabilityController extends Controller
 {
+    // GET /api/pro/availability
     public function index(Request $request)
     {
         $user = $request->user();
+        if (!$user->isDoctor()) {
+            return response()->json(['message' => 'Accès refusé'], 403);
+        }
 
-        $availability = Availability::where('doctor_id', $user->id)
-            ->orderBy('date')
-            ->get();
-
-        return response()->json(['availability' => $availability]);
+        $availabilities = Availability::where('doctor_id', $user->id)->get();
+        return response()->json(['availabilities' => $availabilities]);
     }
 
+    // POST /api/pro/availability
     public function store(Request $request)
     {
         $user = $request->user();
-
-        if ($user->role !== 'doctor') {
-            return response()->json(['message' => 'Unauthorized'], 403);
+        if (!$user->isDoctor()) {
+            return response()->json(['message' => 'Accès refusé'], 403);
         }
 
-        $validated = $request->validate([
-            'date' => 'required|date',
-            'start_time' => 'required|date_format:H:i',
-            'end_time' => 'required|date_format:H:i|after:start_time',
-            'max_patients' => 'required|integer|min:1',
+        $data = $request->validate([
+            'day_of_week' => 'nullable|integer|min:1|max:7',
+            'date' => 'nullable|date',
+            'start_time' => 'required',
+            'end_time' => 'required',
+            'is_recurring' => 'boolean',
         ]);
 
         $availability = Availability::create([
             'doctor_id' => $user->id,
-            ...$validated,
+            ...$data
         ]);
 
-        return response()->json(['availability' => $availability], 201);
-    }
-
-    public function update(Request $request, $id)
-    {
-        $user = $request->user();
-        $availability = Availability::findOrFail($id);
-
-        if ($availability->doctor_id !== $user->id) {
-            return response()->json(['message' => 'Unauthorized'], 403);
-        }
-
-        $validated = $request->validate([
-            'date' => 'sometimes|date',
-            'start_time' => 'sometimes|date_format:H:i',
-            'end_time' => 'sometimes|date_format:H:i',
-            'max_patients' => 'sometimes|integer|min:1',
-        ]);
-
-        $availability->update($validated);
-
-        return response()->json(['availability' => $availability]);
-    }
-
-    public function destroy(Request $request, $id)
-    {
-        $user = $request->user();
-        $availability = Availability::findOrFail($id);
-
-        if ($availability->doctor_id !== $user->id) {
-            return response()->json(['message' => 'Unauthorized'], 403);
-        }
-
-        $availability->delete();
-
-        return response()->json(['message' => 'Availability deleted']);
+        return response()->json([
+            'message' => 'Disponibilité ajoutée avec succès',
+            'availability' => $availability
+        ], 201);
     }
 }

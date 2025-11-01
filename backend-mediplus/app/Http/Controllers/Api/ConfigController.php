@@ -3,31 +3,31 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Setting;
 use Illuminate\Http\Request;
 
 class ConfigController extends Controller
 {
-    public function settings()
+    // GET /api/config/settings
+    public function index()
     {
-        $settings = config('mediplus');
-
+        $settings = Setting::pluck('value', 'key');
         return response()->json(['settings' => $settings]);
     }
 
-    public function updateSettings(Request $request)
+    // PUT /api/config/settings
+    public function update(Request $request)
     {
-        // Mettre à jour les paramètres (implémentation selon votre structure)
-
-        return response()->json(['message' => 'Settings updated']);
+        foreach ($request->all() as $key => $value) {
+            Setting::updateOrCreate(['key' => $key], ['value' => $value]);
+        }
+        return response()->json(['message' => 'Paramètres mis à jour']);
     }
 
+    // GET /api/config/languages
     public function languages()
     {
-        $languages = [
-            'en' => 'English',
-            'fr' => 'Français',
-        ];
-
-        return response()->json(['languages' => $languages]);
+        $langs = Setting::where('key', 'languages')->first();
+        return response()->json(['languages' => $langs ? $langs->value : ['fr']]);
     }
 }

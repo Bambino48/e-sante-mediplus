@@ -9,63 +9,39 @@ use Illuminate\Http\Request;
 
 class AdminController extends Controller
 {
+    // GET /api/admin/users
     public function users()
     {
-        $users = User::paginate(20);
-
+        $users = User::select('id', 'name', 'email', 'role')->get();
         return response()->json(['users' => $users]);
     }
 
-    public function updateUser(Request $request, $id)
+    // PUT /api/admin/users/{id}
+    public function updateRole(Request $request, $id)
     {
-        $user = User::findOrFail($id);
-
-        $validated = $request->validate([
-            'role' => 'sometimes|in:patient,doctor,admin',
-            'status' => 'sometimes|in:active,inactive,suspended',
+        $data = $request->validate([
+            'role' => 'required|in:patient,doctor,admin',
         ]);
 
-        $user->update($validated);
-
-        return response()->json(['user' => $user]);
-    }
-
-    public function deleteUser($id)
-    {
         $user = User::findOrFail($id);
-        $user->delete();
+        $user->update(['role' => $data['role']]);
 
-        return response()->json(['message' => 'User deleted']);
+        return response()->json(['message' => 'Rôle mis à jour', 'user' => $user]);
     }
 
+    // GET /api/admin/catalog
     public function catalog()
     {
-        $specialties = Specialty::paginate(20);
-
-        return response()->json(['specialties' => $specialties]);
+        return response()->json(['specialties' => Specialty::all()]);
     }
 
-    public function storeCatalog(Request $request)
-    {
-        $validated = $request->validate([
-            'name' => 'required|string|unique:specialties',
-            'description' => 'nullable|string',
-        ]);
-
-        $specialty = Specialty::create($validated);
-
-        return response()->json(['specialty' => $specialty], 201);
-    }
-
+    // GET /api/admin/reports
     public function reports()
     {
-        $stats = [
+        return response()->json([
             'total_users' => User::count(),
             'total_doctors' => User::where('role', 'doctor')->count(),
             'total_patients' => User::where('role', 'patient')->count(),
-            'total_appointments' => \App\Models\Appointment::count(),
-        ];
-
-        return response()->json(['stats' => $stats]);
+        ]);
     }
 }

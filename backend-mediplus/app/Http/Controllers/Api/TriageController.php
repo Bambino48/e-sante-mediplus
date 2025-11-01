@@ -3,58 +3,40 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Triage;
+use App\Models\TriageSession;
 use Illuminate\Http\Request;
 
 class TriageController extends Controller
 {
+    // POST /api/triage
     public function analyze(Request $request)
     {
-        $validated = $request->validate([
+        $user = $request->user();
+        $data = $request->validate([
             'symptoms' => 'required|array',
-            'duration' => 'required|string',
-            'severity' => 'required|in:mild,moderate,severe',
         ]);
 
-        // Appel à un service IA (exemple : OpenAI)
-        $analysis = $this->callAIService($validated);
+        // Simule un diagnostic IA
+        $result = [
+            'diagnostic' => 'Infection virale probable',
+            'urgence' => 'faible',
+            'recommendations' => ['Reposez-vous', 'Hydratez-vous bien'],
+        ];
 
-        $triage = Triage::create([
-            'user_id' => $request->user()->id,
-            'symptoms' => json_encode($validated['symptoms']),
-            'duration' => $validated['duration'],
-            'severity' => $validated['severity'],
-            'analysis' => $analysis,
-            'recommendation' => $this->getRecommendation($analysis),
+        $session = TriageSession::create([
+            'patient_id' => $user->id,
+            'symptoms' => $data['symptoms'],
+            'result' => $result,
         ]);
 
-        return response()->json(['triage' => $triage], 201);
+        return response()->json(['triage' => $session]);
     }
 
+    // GET /api/triage/history
     public function history(Request $request)
     {
-        $history = Triage::where('user_id', $request->user()->id)
-            ->orderByDesc('created_at')
-            ->paginate(15);
-
-        return response()->json(['history' => $history]);
-    }
-
-    public function show($id)
-    {
-        $triage = Triage::findOrFail($id);
-
-        return response()->json(['triage' => $triage]);
-    }
-
-    private function callAIService($data)
-    {
-        // Implémentation appel IA
-        return "Based on symptoms, consider consulting a specialist.";
-    }
-
-    private function getRecommendation($analysis)
-    {
-        return "See a doctor";
+        $user = $request->user();
+        $sessions = TriageSession::where('patient_id', $user->id)->get();
+        return response()->json(['history' => $sessions]);
     }
 }

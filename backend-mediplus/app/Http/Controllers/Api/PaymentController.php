@@ -8,60 +8,56 @@ use Illuminate\Http\Request;
 
 class PaymentController extends Controller
 {
+    // POST /api/payment/create
     public function create(Request $request)
     {
-        $validated = $request->validate([
-            'appointment_id' => 'required|exists:appointments,id',
-            'amount' => 'required|numeric|min:0.01',
-            'payment_method' => 'required|in:card,mobile_money,bank',
+        $user = $request->user();
+        $data = $request->validate([
+            'doctor_id' => 'required|exists:users,id',
+            'amount' => 'required|integer|min:500',
         ]);
 
         $payment = Payment::create([
-            'user_id' => $request->user()->id,
-            'appointment_id' => $validated['appointment_id'],
-            'amount' => $validated['amount'],
-            'payment_method' => $validated['payment_method'],
-            'status' => 'pending',
-            'transaction_id' => uniqid(),
+            'patient_id' => $user->id,
+            'doctor_id' => $data['doctor_id'],
+            'amount' => $data['amount'],
+            'status' => 'initiated',
+            'provider' => 'MoneyFusion',
         ]);
-
-        return response()->json(['payment' => $payment], 201);
-    }
-
-    public function verify(Request $request)
-    {
-        $validated = $request->validate([
-            'transaction_id' => 'required|exists:payments,transaction_id',
-        ]);
-
-        $payment = Payment::where('transaction_id', $validated['transaction_id'])->firstOrFail();
-
-        // Vérifier auprès du gateway de paiement
-        $payment->update(['status' => 'completed']);
 
         return response()->json(['payment' => $payment]);
     }
 
-    public function history(Request $request)
+    // POST /api/payment/verify
+    public function verify(Request $request)
     {
-        $payments = Payment::where('user_id', $request->user()->id)
-            ->paginate(15);
+        $data = $request->validate([
+            'reference' => 'required|string',
+        ]);
 
-        return response()->json(['payments' => $payments]);
+        $payment = Payment::where('reference', $data['reference'])->firstOrFail();
+        $payment->update(['status' => 'success']);
+
+        return response()->json(['message' => 'Paiement confirmé', 'payment' => $payment]);
     }
 
+    // GET /api/pro/billing
     public function billing(Request $request)
     {
         $user = $request->user();
-
-        if ($user->role !== 'doctor') {
-            return response()->json(['message' => 'Unauthorized'], 403);
+        if (!$user->isDoctor()) {
+            return response()->json(['message' => 'Accès refusé'], 403);
         }
 
-        $billing = Payment::whereHas('appointment', function ($q) use ($user) {
-            $q->where('doctor_id', $user->id);
-        })->sum('amount');
+        $payments = Payment::where('doctor_id', $user->id)
+            ->where('status', 'success')
+            ->get();
 
-        return response()->json(['total_revenue' => $billing]);
+        $total = $payments->sum('amount');
+
+        return response()->json([
+            'total_revenu' => $total,
+            'paiements' => $payments
+        ]);
     }
 }
