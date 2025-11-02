@@ -5,14 +5,15 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration {
-    public function up(): void {
+    public function up(): void
+    {
         Schema::create('payments', function (Blueprint $table) {
             $table->id();
             $table->foreignId('patient_id')->constrained('users')->onDelete('cascade');
             $table->foreignId('doctor_id')->constrained('users')->onDelete('cascade');
             $table->foreignId('appointment_id')->nullable()->constrained('appointments')->nullOnDelete();
             $table->integer('amount'); // en F CFA
-            $table->enum('status', ['initiated','success','failed'])->default('initiated');
+            $table->enum('status', ['initiated', 'success', 'failed'])->default('initiated');
             $table->string('provider')->nullable(); // MoneyFusion / Stripe / Paypal...
             $table->string('reference')->nullable();
             $table->timestamps();
@@ -29,7 +30,8 @@ return new class extends Migration {
         });
     }
 
-    public function down(): void {
+    public function down(): void
+    {
         Schema::dropIfExists('billings');
         Schema::dropIfExists('payments');
     }

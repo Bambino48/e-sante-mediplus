@@ -5,8 +5,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration {
-    public function up(): void
-    {
+    public function up(): void {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
 
@@ -15,7 +14,7 @@ return new class extends Migration {
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
 
-            $table->enum('role', ['patient', 'doctor', 'admin'])->default('patient');
+            $table->enum('role', ['patient','doctor','admin'])->default('patient');
             $table->string('phone')->nullable();
             $table->string('photo')->nullable();
             $table->decimal('latitude', 10, 7)->nullable();
@@ -26,8 +25,7 @@ return new class extends Migration {
         });
     }
 
-    public function down(): void
-    {
+    public function down(): void {
         Schema::dropIfExists('users');
     }
 };
