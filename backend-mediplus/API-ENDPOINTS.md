@@ -88,6 +88,75 @@ Authorization: Bearer {token}
 
 ## Doctor Endpoints
 
+### List All Doctors (Public)
+
+```http
+GET /api/doctors
+```
+
+**Query Parameters:**
+
+-   `per_page` (integer, default: 20): Number of doctors per page
+-   `sort_by` (string, default: name): Sort field (name, created_at, rating, fees)
+-   `sort_order` (string, default: asc): Sort order (asc, desc)
+-   `city` (string, optional): Filter by city
+-   `specialty` (string, optional): Filter by specialty
+-   `has_profile` (boolean, default: true): Include only doctors with complete profile
+
+**Response 200:**
+
+```json
+{
+    "success": true,
+    "data": {
+        "doctors": [
+            {
+                "id": 1,
+                "name": "Dr. John Doe",
+                "email": "john.doe@mediplus.com",
+                "phone": "+221 77 123 45 67",
+                "photo": "https://example.com/photos/doctor1.jpg",
+                "location": {
+                    "latitude": 14.6928,
+                    "longitude": -17.4467,
+                    "city": "Dakar",
+                    "address": "Avenue Bourguiba, Plateau"
+                },
+                "profile": {
+                    "bio": "Cardiologue spécialisé en cardiologie interventionnelle.",
+                    "fees": 25000,
+                    "rating": 4.8,
+                    "primary_specialty": "Cardiologie",
+                    "phone": "+221 33 123 45 67",
+                    "availability": ["Lundi 08:00-12:00", "Mardi 14:00-18:00"]
+                },
+                "specialties": ["Cardiologie", "Médecine Interne"],
+                "member_since": "2023-01-15",
+                "has_complete_profile": true
+            }
+        ],
+        "pagination": {
+            "total": 45,
+            "per_page": 20,
+            "current_page": 1,
+            "last_page": 3,
+            "from": 1,
+            "to": 20
+        },
+        "filters": {
+            "city": null,
+            "specialty": null,
+            "has_profile": true
+        },
+        "sorting": {
+            "sort_by": "name",
+            "sort_order": "asc"
+        }
+    },
+    "message": "Liste des médecins récupérée avec succès"
+}
+```
+
 ### Get Doctor Profile
 
 ```http

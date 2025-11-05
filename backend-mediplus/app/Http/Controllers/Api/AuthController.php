@@ -7,6 +7,8 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
@@ -80,12 +82,74 @@ class AuthController extends Controller
         $data = $request->validate([
             'name' => 'sometimes|string|max:120',
             'phone' => 'sometimes|string|max:30|nullable',
-            'photo' => 'sometimes|string|nullable',
+            'photo' => 'sometimes|nullable', // Accepte fichier ou string
             'latitude' => 'sometimes|numeric|nullable',
             'longitude' => 'sometimes|numeric|nullable',
         ]);
 
+        // Traitement de la photo
+        if ($request->hasFile('photo') && $request->file('photo')->isValid()) {
+            // Cas 1: Upload de fichier (multipart/form-data)
+            $file = $request->file('photo');
+
+            // Validation du type d'image
+            $request->validate([
+                'photo' => 'image|mimes:jpeg,png,jpg,gif|max:2048'
+            ]);
+
+            // Supprimer l'ancienne photo si elle existe
+            if ($user->photo) {
+                Storage::disk('public')->delete($user->photo);
+            }
+
+            $path = $file->store('avatars', 'public');
+            $data['photo'] = $path;
+        } elseif (!empty($data['photo']) && is_string($data['photo']) && Str::startsWith($data['photo'], 'data:')) {
+            // Cas 2: Upload base64 (data URI)
+            if (preg_match('/^data:image\/(\w+);base64,/', $data['photo'], $type)) {
+                $imageData = substr($data['photo'], strpos($data['photo'], ',') + 1);
+                $imageData = base64_decode($imageData);
+
+                if ($imageData === false) {
+                    return response()->json(['message' => 'Données image base64 invalides.'], 422);
+                }
+
+                $extension = $type[1] === 'jpeg' ? 'jpg' : $type[1];
+
+                // Validation de l'extension
+                if (!in_array($extension, ['jpg', 'jpeg', 'png', 'gif'])) {
+                    return response()->json(['message' => 'Type d\'image non supporté.'], 422);
+                }
+
+                // Supprimer l'ancienne photo si elle existe
+                if ($user->photo) {
+                    Storage::disk('public')->delete($user->photo);
+                }
+
+                $filename = 'avatars/' . $user->id . '_' . time() . '.' . $extension;
+                Storage::disk('public')->put($filename, $imageData);
+                $data['photo'] = $filename;
+            } else {
+                return response()->json(['message' => 'Format d\'image base64 invalide.'], 422);
+            }
+        } elseif (array_key_exists('photo', $data)) {
+            // Cas 3: Chaîne vide ou null - supprimer la photo
+            if ($data['photo'] === '' || $data['photo'] === null) {
+                if ($user->photo) {
+                    Storage::disk('public')->delete($user->photo);
+                }
+                $data['photo'] = null;
+            }
+        }
+
         $user->update($data);
-        return response()->json(['message' => 'Profil mis à jour', 'user' => $user]);
+
+        // Ajouter l'URL complète de la photo dans la réponse
+        $userData = $user->toArray();
+        if ($user->photo) {
+            $userData['photo_url'] = asset('storage/' . $user->photo);
+        }
+
+        return response()->json(['message' => 'Profil mis à jour', 'user' => $userData]);
     }
 }

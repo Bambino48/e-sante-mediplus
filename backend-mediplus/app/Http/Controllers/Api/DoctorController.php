@@ -11,6 +11,135 @@ use Illuminate\Support\Facades\Auth;
 
 class DoctorController extends Controller
 {
+    /**
+     * Récupère la liste complète des docteurs avec leurs profils
+     * Route publique pour affichage frontend
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function index(Request $request)
+    {
+        $perPage = $request->input('per_page', 20);
+        $sortBy = $request->input('sort_by', 'name');
+        $sortOrder = $request->input('sort_order', 'asc');
+        $city = $request->input('city');
+        $specialty = $request->input('specialty');
+        $hasProfile = $request->input('has_profile', true);
+
+        // Validation des paramètres de tri
+        $allowedSortFields = ['name', 'created_at', 'rating', 'fees'];
+        $sortBy = in_array($sortBy, $allowedSortFields) ? $sortBy : 'name';
+        $sortOrder = in_array($sortOrder, ['asc', 'desc']) ? $sortOrder : 'asc';
+
+        $query = User::where('role', 'doctor')
+            ->with([
+                'doctorProfile',
+                'specialties:id,name'
+            ])
+            ->select([
+                'users.id',
+                'users.name',
+                'users.email',
+                'users.phone',
+                'users.photo',
+                'users.latitude',
+                'users.longitude',
+                'users.created_at'
+            ]);
+
+        // Filtrer uniquement les docteurs ayant un profil complet
+        if ($hasProfile) {
+            $query->has('doctorProfile');
+        }
+
+        // Filtres optionnels
+        if ($city) {
+            $query->whereHas('doctorProfile', function ($q) use ($city) {
+                $q->where('city', 'like', "%{$city}%");
+            });
+        }
+
+        if ($specialty) {
+            $query->whereHas('specialties', function ($q) use ($specialty) {
+                $q->where('name', 'like', "%{$specialty}%");
+            })->orWhereHas('doctorProfile', function ($q) use ($specialty) {
+                $q->where('primary_specialty', 'like', "%{$specialty}%");
+            });
+        }
+
+        // Tri personnalisé
+        if ($sortBy === 'rating' || $sortBy === 'fees') {
+            // Utiliser une sous-requête pour le tri au lieu de leftJoin
+            $query->whereHas('doctorProfile')
+                ->orderBy(
+                    DoctorProfile::select($sortBy)
+                        ->whereColumn('doctor_profiles.user_id', 'users.id')
+                        ->limit(1),
+                    $sortOrder
+                );
+        } else {
+            $query->orderBy($sortBy, $sortOrder);
+        }
+
+        $doctors = $query->paginate($perPage);
+
+        // Formatage des données pour le frontend
+        $formattedDoctors = $doctors->getCollection()->map(function ($doctor) {
+            $profile = $doctor->doctorProfile;
+
+            return [
+                'id' => $doctor->id,
+                'name' => $doctor->name,
+                'email' => $doctor->email,
+                'phone' => $doctor->phone,
+                'photo' => $doctor->photo,
+                'location' => [
+                    'latitude' => $doctor->latitude,
+                    'longitude' => $doctor->longitude,
+                    'city' => $profile?->city,
+                    'address' => $profile?->address,
+                ],
+                'profile' => $profile ? [
+                    'bio' => $profile->bio,
+                    'fees' => $profile->fees,
+                    'rating' => $profile->rating,
+                    'primary_specialty' => $profile->primary_specialty,
+                    'phone' => $profile->phone,
+                    'availability' => $profile->availability,
+                ] : null,
+                'specialties' => $doctor->specialties->pluck('name')->toArray(),
+                'member_since' => $doctor->created_at->format('Y-m-d'),
+                'has_complete_profile' => (bool) $profile,
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'doctors' => $formattedDoctors,
+                'pagination' => [
+                    'total' => $doctors->total(),
+                    'per_page' => $doctors->perPage(),
+                    'current_page' => $doctors->currentPage(),
+                    'last_page' => $doctors->lastPage(),
+                    'from' => $doctors->firstItem(),
+                    'to' => $doctors->lastItem(),
+                ],
+                'filters' => [
+                    'city' => $city,
+                    'specialty' => $specialty,
+                    'has_profile' => $hasProfile,
+                ],
+                'sorting' => [
+                    'sort_by' => $sortBy,
+                    'sort_order' => $sortOrder,
+                ],
+            ],
+            'message' => 'Liste des médecins récupérée avec succès'
+        ]);
+    }
+
     // GET /api/search
     public function search(Request $request)
     {

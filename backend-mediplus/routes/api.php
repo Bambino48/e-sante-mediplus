@@ -112,6 +112,7 @@ Route::middleware('auth:sanctum')->group(function () {
 // ===========================================================
 // Routes Publiques - Recherche et Catalogue (Phase 2)
 // ===========================================================
+Route::get('/doctors', [DoctorController::class, 'index']);
 Route::get('/search', [DoctorController::class, 'search']);
 Route::get('/doctor/{id}', [DoctorController::class, 'show']);
 Route::get('/specialties', [DoctorController::class, 'specialties']);

@@ -36,7 +36,7 @@
 
 | Métrique        | Valeur                     |
 | --------------- | -------------------------- |
-| **Routes API**  | 39 endpoints               |
+| **Routes API**  | 40 endpoints               |
 | **Contrôleurs** | 12 contrôleurs spécialisés |
 | **Tests**       | 23 tests / 68 assertions   |
 | **Couverture**  | 100% des routes testées    |
@@ -54,6 +54,7 @@
 ### Gestion Médecins
 
 -   **Profils médicaux** complets avec spécialités
+-   **Liste publique** des médecins avec filtrage avancé
 -   **Gestion des disponibilités** flexible
 -   **Facturation automatisée**
 -   **Tableau de bord professionnel**
