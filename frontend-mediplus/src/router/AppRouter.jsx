@@ -1,21 +1,27 @@
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Navigate, Route, Routes } from "react-router-dom";
 import Navbar from "../components/Navbar.jsx"; // ✅ ajouté
 
 // 🩺 Pages Patient
-import PatientHome from "../pages/patient/Home.jsx";
 import PatientDashboard from "../pages/patient/Dashboard.jsx";
-import Profile from "../pages/patient/Profile.jsx";
 import DashboardContainer from "../pages/patient/DashboardContainer.jsx";
+import PatientHome from "../pages/patient/Home.jsx";
+import Profile from "../pages/patient/Profile.jsx";
 
 // 👨‍⚕️ Professionnel
-import ProDashboard from "../pages/pro/Dashboard.jsx";
 import Billing from "../pages/pro/Billing.jsx";
+import ProCalendar from "../pages/pro/Calendar.jsx";
+import ProDashboard from "../pages/pro/Dashboard.jsx";
+import ProPatients from "../pages/pro/Patients.jsx";
+import ProPrescriptions from "../pages/pro/Prescriptions.jsx";
 import PrescriptionsEditor from "../pages/pro/PrescriptionsEditor.jsx";
+import ProProfile from "../pages/pro/Profile.jsx";
+import ProSettings from "../pages/pro/Settings.jsx";
+import ProTeleconsult from "../pages/pro/Teleconsult.jsx";
 
 // 🧑‍💼 Administrateur
+import Catalog from "../pages/admin/Catalog.jsx";
 import AdminDashboard from "../pages/admin/Dashboard.jsx";
 import Users from "../pages/admin/Users.jsx";
-import Catalog from "../pages/admin/Catalog.jsx";
 
 // 🔐 Authentification
 import Login from "../pages/auth/Login.jsx";
@@ -23,109 +29,168 @@ import Register from "../pages/auth/Register.jsx";
 import ProtectedRoute from "./ProtectedRoute.jsx";
 
 // 🔍 Fonctionnalités patient
-import Search from "../pages/patient/Search.jsx";
 import Booking from "../pages/patient/Booking.jsx";
-import Teleconsult from "../pages/patient/Teleconsult.jsx";
-import PatientPrescriptions from "../pages/patient/Prescriptions.jsx";
 import Checkout from "../pages/patient/Checkout.jsx";
-import Triage from "../pages/patient/Triage.jsx";
 import Doctor from "../pages/patient/Doctor.jsx";
+import PatientPrescriptions from "../pages/patient/Prescriptions.jsx";
+import Search from "../pages/patient/Search.jsx";
+import Teleconsult from "../pages/patient/Teleconsult.jsx";
+import Triage from "../pages/patient/Triage.jsx";
 
 // 📄 Pages statiques
-import Pricing from "../pages/static/Pricing.jsx";
 import About from "../pages/static/About.jsx";
 import Contact from "../pages/static/Contact.jsx";
+import Pricing from "../pages/static/Pricing.jsx";
 
 export default function AppRouter() {
-    return (
-        <>
-            <Navbar /> {/* ✅ toujours visible */}
-            <Routes>
-                {/* Public */}
-                <Route path="/" element={<PatientHome />} />
-                <Route path="/login" element={<Login />} />
-                <Route path="/register" element={<Register />} />
+  return (
+    <>
+      <Navbar /> {/* ✅ toujours visible */}
+      <Routes>
+        {/* Public */}
+        <Route path="/" element={<PatientHome />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
 
-                {/* Pages statiques */}
-                <Route path="/pricing" element={<Pricing />} />
-                <Route path="/about" element={<About />} />
-                <Route path="/contact" element={<Contact />} />
+        {/* Pages statiques */}
+        <Route path="/pricing" element={<Pricing />} />
+        <Route path="/about" element={<About />} />
+        <Route path="/contact" element={<Contact />} />
 
-                {/* Patient */}
-                <Route path="/search" element={<Search />} />
-                <Route path="/booking/:doctorId" element={<Booking />} />
-                <Route path="/teleconsult/:roomId" element={<Teleconsult />} />
-                <Route path="/patient/prescriptions" element={<PatientPrescriptions />} />
-                <Route path="/checkout/:appointmentId" element={<Checkout />} />
-                <Route path="/triage" element={<Triage />} />
-                <Route path="/doctor/:id" element={<Doctor />} />
-                <Route path="/patient/profile" element={<Profile />} />
-                <Route path="/patient/dashboard" element={<DashboardContainer />} />
+        {/* Patient */}
+        <Route path="/search" element={<Search />} />
+        <Route path="/booking/:doctorId" element={<Booking />} />
+        <Route path="/teleconsult/:roomId" element={<Teleconsult />} />
+        <Route
+          path="/patient/prescriptions"
+          element={<PatientPrescriptions />}
+        />
+        <Route path="/checkout/:appointmentId" element={<Checkout />} />
+        <Route path="/triage" element={<Triage />} />
+        <Route path="/doctor/:id" element={<Doctor />} />
+        <Route path="/patient/profile" element={<Profile />} />
+        <Route path="/patient/dashboard" element={<DashboardContainer />} />
 
-                <Route
-                    path="/patient/dashboard"
-                    element={
-                        <ProtectedRoute roles={["patient"]}>
-                            <PatientDashboard />
-                        </ProtectedRoute>
-                    }
-                />
+        <Route
+          path="/patient/dashboard"
+          element={
+            <ProtectedRoute roles={["patient"]}>
+              <PatientDashboard />
+            </ProtectedRoute>
+          }
+        />
 
-                {/* Professionnel */}
-                <Route
-                    path="/pro/dashboard"
-                    element={
-                        <ProtectedRoute roles={["doctor", "nurse", "pro"]}>
-                            <ProDashboard />
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/pro/prescriptions/new"
-                    element={
-                        <ProtectedRoute roles={["doctor", "nurse", "pro"]}>
-                            <PrescriptionsEditor />
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/pro/billing"
-                    element={
-                        <ProtectedRoute roles={["doctor", "nurse", "pro"]}>
-                            <Billing />
-                        </ProtectedRoute>
-                    }
-                />
+        {/* Professionnel */}
+        <Route
+          path="/pro/dashboard"
+          element={
+            <ProtectedRoute roles={["doctor", "nurse", "pro"]}>
+              <ProDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/pro/calendar"
+          element={
+            <ProtectedRoute roles={["doctor", "nurse", "pro"]}>
+              <ProCalendar />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/pro/patients"
+          element={
+            <ProtectedRoute roles={["doctor", "nurse", "pro"]}>
+              <ProPatients />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/pro/prescriptions"
+          element={
+            <ProtectedRoute roles={["doctor", "nurse", "pro"]}>
+              <ProPrescriptions />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/pro/prescriptions/editor"
+          element={
+            <ProtectedRoute roles={["doctor", "nurse", "pro"]}>
+              <PrescriptionsEditor />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/pro/prescriptions/new"
+          element={
+            <ProtectedRoute roles={["doctor", "nurse", "pro"]}>
+              <PrescriptionsEditor />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/pro/teleconsult"
+          element={
+            <ProtectedRoute roles={["doctor", "nurse", "pro"]}>
+              <ProTeleconsult />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/pro/profile"
+          element={
+            <ProtectedRoute roles={["doctor", "nurse", "pro"]}>
+              <ProProfile />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/pro/settings"
+          element={
+            <ProtectedRoute roles={["doctor", "nurse", "pro"]}>
+              <ProSettings />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/pro/billing"
+          element={
+            <ProtectedRoute roles={["doctor", "nurse", "pro"]}>
+              <Billing />
+            </ProtectedRoute>
+          }
+        />
 
-                {/* Admin */}
-                <Route
-                    path="/admin/dashboard"
-                    element={
-                        <ProtectedRoute roles={["admin"]}>
-                            <AdminDashboard />
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/admin/users"
-                    element={
-                        <ProtectedRoute roles={["admin"]}>
-                            <Users />
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/admin/catalog"
-                    element={
-                        <ProtectedRoute roles={["admin"]}>
-                            <Catalog />
-                        </ProtectedRoute>
-                    }
-                />
+        {/* Admin */}
+        <Route
+          path="/admin/dashboard"
+          element={
+            <ProtectedRoute roles={["admin"]}>
+              <AdminDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/users"
+          element={
+            <ProtectedRoute roles={["admin"]}>
+              <Users />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/catalog"
+          element={
+            <ProtectedRoute roles={["admin"]}>
+              <Catalog />
+            </ProtectedRoute>
+          }
+        />
 
-                {/* Fallback */}
-                <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-        </>
-    );
+        {/* Fallback */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </>
+  );
 }

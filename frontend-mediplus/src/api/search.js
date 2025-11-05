@@ -1,7 +1,33 @@
 /* eslint-disable no-unused-vars */
 import { getDoctorsList } from "./doctors.js";
+import { dualIntelligentSearch } from "./dualSearch.js";
 
 export async function searchProviders(params) {
+  console.log("🔍 Recherche avec système dual intelligent");
+
+  try {
+    // 🧠 Utilisation du nouveau système de recherche dual
+    const result = await dualIntelligentSearch(params);
+    console.log("📊 Résultat recherche dual:", result);
+
+    return {
+      items: result.items || [],
+      total: result.total || 0,
+      source: result.source || "dual",
+      meta: {
+        searchTerms: result.searchTerms || [],
+        databaseCount: result.databaseCount || 0,
+        geoFilteredCount: result.geoFilteredCount || 0,
+      },
+    };
+  } catch (error) {
+    console.warn("❌ Erreur système dual, fallback vers doctors:", error);
+    return searchDoctorsOnly(params); // Fallback vers l'ancienne méthode
+  }
+}
+
+// Fonction de fallback qui utilise seulement l'API doctors
+async function searchDoctorsOnly(params) {
   try {
     // 👉 Utilisation de la vraie API doctors
     const searchParams = {
@@ -12,29 +38,38 @@ export async function searchProviders(params) {
       sort_by: params.sort_by || "nom",
       sort_order: params.sort_order || "asc",
     };
-
     const data = await getDoctorsList(searchParams);
 
     // Transformation des données pour correspondre au format attendu par le frontend
     const items =
-      data.doctors?.map((doctor) => ({
-        id: doctor.id,
-        name: doctor.name || `Dr ${doctor.first_name} ${doctor.last_name}`,
-        specialty: doctor.specialty || doctor.specialization,
-        rating: doctor.rating || 4.5,
-        languages: doctor.languages || ["FR"],
-        fees: doctor.consultation_fee || 15000,
-        lat: doctor.latitude || 5.3456,
-        lng: doctor.longitude || -4.0237,
-        nextSlot: doctor.next_availability || "10:30",
-        distance_km: doctor.distance_km || 0,
-        phone: doctor.phone,
-        email: doctor.email,
-        address: doctor.address,
-        bio: doctor.bio,
-        experience_years: doctor.experience_years,
-        is_available: doctor.is_available,
-      })) || [];
+      data.data?.doctors
+        ?.filter((doctor) => doctor.latitude && doctor.longitude) // Seulement les docteurs avec coordonnées réelles
+        ?.map((doctor) => {
+          const item = {
+            id: doctor.id,
+            name: doctor.name || `Dr ${doctor.first_name} ${doctor.last_name}`,
+            specialty: doctor.specialty || doctor.specialization,
+            type: doctor.type || "doctor", // doctor, clinic, hospital, pharmacy
+            rating: doctor.rating || 4.5,
+            languages: doctor.languages || ["FR"],
+            fees: doctor.consultation_fee || 15000,
+            lat: doctor.latitude,
+            lng: doctor.longitude,
+            nextSlot: doctor.next_availability || "10:30",
+            distance_km: doctor.distance_km || 0,
+            phone: doctor.phone,
+            email: doctor.email,
+            address: doctor.address,
+            bio: doctor.bio,
+            experience_years: doctor.experience_years,
+            is_available: doctor.is_available,
+          };
+
+          console.log(
+            `📍 Docteur ${doctor.name}: lat=${item.lat}, lng=${item.lng}`
+          );
+          return item;
+        }) || [];
 
     return {
       items,
