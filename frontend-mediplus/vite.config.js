@@ -9,8 +9,7 @@ export default defineConfig({
   define: {
     global: "globalThis", // important pour randombytes
     "process.env": {}, // ✅ évite "process is not defined"
-    "process.nextTick": "((fn, ...args) => setTimeout(() => fn(...args), 0))", // Polyfill pour process.nextTick
-    "process.browser": true,
+    "process.browser": "true",
   },
   resolve: {
     alias: {

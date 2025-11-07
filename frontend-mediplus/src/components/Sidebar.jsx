@@ -318,6 +318,12 @@ function getGroupsBySection(section) {
           icon: <Search size={18} />,
         },
         {
+          key: "appointments",
+          to: "/patient/appointments",
+          label: "Mes rendez-vous",
+          icon: <CalendarDays size={18} />,
+        },
+        {
           key: "teleconsult",
           to: "/teleconsult",
           label: "Téléconsultation",
@@ -328,12 +334,6 @@ function getGroupsBySection(section) {
           to: "/triage",
           label: "Triage IA",
           icon: <Brain size={18} />,
-        },
-        {
-          key: "booking",
-          to: "/booking",
-          label: "Mes rendez-vous",
-          icon: <CalendarDays size={18} />,
         },
         {
           key: "prescriptions",

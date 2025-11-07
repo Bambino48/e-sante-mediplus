@@ -9,22 +9,45 @@ export async function getNextAppointment() {
 // ✅ API Réelles - Liste des rendez-vous du patient
 export async function getPatientAppointments() {
     const { data } = await api.get("/patient/appointments");
-    return data; // { items: [...] }
+    // Le backend retourne directement un tableau d'appointments
+    // Normalisation pour l'interface : on s'attend à { items: [...] }
+    return Array.isArray(data) ? { items: data } : data;
 }
 
-// 🔗 API réelles (décommente quand le backend sera prêt)
-// export async function getDoctorAvailabilities(doctorId, params) {
-//   const { data } = await api.get(`/api/doctors/${doctorId}/availabilities`, { params });
-//   return data; // { slots: { '2025-10-30': ['09:00','09:30'] , ... } }
-// }
-//
-// export async function bookAppointment(payload) {
-//   const { data } = await api.post('/api/appointments', payload);
-//   return data;
-// }
+// ✅ API Réelles - Créer un rendez-vous
+export async function bookAppointment(payload) {
+    // Transformation : scheduled_at au lieu de start_at pour correspondre à la BDD
+    const requestData = {
+        doctor_id: payload.doctor_id,
+        scheduled_at: payload.scheduled_at || payload.start_at, // Support des deux formats
+        reason: payload.reason || "Consultation générale",
+        mode: payload.mode || "physical", // video | physical
+    };
 
-// 🧪 MOCK local en attendant l'API Laravel
+    const { data } = await api.post("/patient/appointments", requestData);
+    return data;
+}
+
+// ✅ API Réelles - Annuler un rendez-vous
+export async function cancelAppointment(appointmentId) {
+    const { data } = await api.delete(`/patient/appointments/${appointmentId}`);
+    return data;
+}
+
+// ✅ API Réelles - Modifier un rendez-vous
+export async function updateAppointment(appointmentId, payload) {
+    const { data } = await api.put(
+        `/patient/appointments/${appointmentId}`,
+        payload
+    );
+    return data;
+}
+
+// 🧪 MOCK - Disponibilités médecin (en attendant l'API réelle)
 export async function getDoctorAvailabilities(doctorId) {
+    // TODO: Connecter à l'API réelle quand disponible
+    // const { data } = await api.get(`/doctors/${doctorId}/availabilities`);
+
     // Génère une semaine de slots fictifs
     const today = new Date();
     const start = new Date(
@@ -45,18 +68,6 @@ export async function getDoctorAvailabilities(doctorId) {
         byDay[key] = slots;
     }
     return { doctor: mockDoctor(doctorId), slots: byDay };
-}
-
-export async function bookAppointment(payload) {
-    if (!payload?.doctor_id || !payload?.start_at || !payload?.mode) {
-        throw new Error("Champs de réservation incomplets");
-    }
-    await new Promise((r) => setTimeout(r, 500)); // simulate latency
-    return {
-        id: Math.floor(Math.random() * 100000),
-        status: "pending",
-        ...payload,
-    };
 }
 
 function mockDoctor(id) {

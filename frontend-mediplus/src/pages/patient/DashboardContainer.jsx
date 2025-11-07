@@ -1,6 +1,7 @@
 // src/pages/patient/DashboardContainer.jsx
 import { useState } from "react";
 import Sidebar from "../../components/Sidebar.jsx";
+import Appointments from "./Appointments.jsx";
 import Booking from "./Booking.jsx";
 import PatientDashboard from "./Dashboard.jsx";
 import Prescriptions from "./Prescriptions.jsx";
@@ -20,6 +21,7 @@ export default function DashboardContainer() {
     teleconsult: <Teleconsult />,
     triage: <Triage />,
     prescriptions: <Prescriptions />,
+    appointments: <Appointments />,
     booking: <Booking />,
   };
 
