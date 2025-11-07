@@ -1,4 +1,18 @@
 // src/api/prescriptions.js
+import api from "./axiosInstance.js";
+
+// ✅ API Réelles - Médicaments à prendre aujourd'hui
+export async function getTodayMedications() {
+    const { data } = await api.get("/medications/today");
+    return data; // { items: [...] }
+}
+
+// ✅ API Réelles - Liste des ordonnances du patient
+export async function getPatientPrescriptions() {
+    const { data } = await api.get("/patient/prescriptions");
+    return data; // { items: [...] }
+}
+
 // Mock local en attendant Laravel. Les données sont en mémoire (réinitialisées au refresh).
 const DB = {
     prescriptions: [],
@@ -7,7 +21,11 @@ const DB = {
 
 export async function createPrescription(payload) {
     // payload: { doctor_id, patient_id, medications: [{ name, dosage, frequency, duration_days, instructions }] }
-    if (!payload?.doctor_id || !payload?.patient_id || !Array.isArray(payload?.medications)) {
+    if (
+        !payload?.doctor_id ||
+        !payload?.patient_id ||
+        !Array.isArray(payload?.medications)
+    ) {
         throw new Error("Données d’ordonnance incomplètes");
     }
 
@@ -46,7 +64,9 @@ export async function createPrescription(payload) {
 
 export async function listPrescriptionsByPatient(patient_id) {
     const presc = DB.prescriptions.filter((p) => p.patient_id === patient_id);
-    const meds = DB.medications.filter((m) => presc.some((p) => p.id === m.prescription_id));
+    const meds = DB.medications.filter((m) =>
+        presc.some((p) => p.id === m.prescription_id)
+    );
     // regrouper
     const items = presc.map((p) => ({
         ...p,
@@ -57,7 +77,9 @@ export async function listPrescriptionsByPatient(patient_id) {
 
 export async function listPrescriptionsByDoctor(doctor_id) {
     const presc = DB.prescriptions.filter((p) => p.doctor_id === doctor_id);
-    const meds = DB.medications.filter((m) => presc.some((p) => p.id === m.prescription_id));
+    const meds = DB.medications.filter((m) =>
+        presc.some((p) => p.id === m.prescription_id)
+    );
     const items = presc.map((p) => ({
         ...p,
         medications: meds.filter((m) => m.prescription_id === p.id),

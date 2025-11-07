@@ -2,25 +2,72 @@
 // src/pages/patient/Dashboard.jsx
 import { motion } from "framer-motion";
 import {
+  AlertCircle,
   CalendarDays,
   ClipboardList,
+  Clock,
   Heart,
-  Search,
   Stethoscope,
   Video,
 } from "lucide-react";
-import { Link } from "react-router-dom";
+import toast from "react-hot-toast";
+import { Link, useNavigate } from "react-router-dom";
 import PatientMedicalProfile from "../../components/PatientMedicalProfile";
+import {
+  useNextAppointment,
+  useTodayMedications,
+  useUnreadNotifications,
+} from "../../hooks/useDashboard.js";
 
 export default function PatientDashboard() {
+  const navigate = useNavigate();
+
+  // ✅ Récupération des données en temps réel
+  const { data: nextAppointmentData, isLoading: loadingAppointment } =
+    useNextAppointment();
+  const { data: medicationsData, isLoading: loadingMedications } =
+    useTodayMedications();
+  const { data: notificationsData, isLoading: loadingNotifications } =
+    useUnreadNotifications();
+
+  // ✅ Gestionnaires de clics intelligents
+  const handleAppointmentsClick = (e) => {
+    if (!nextAppointmentData?.appointment) {
+      e.preventDefault();
+      toast("Vous n'avez aucun rendez-vous prévu pour le moment", {
+        icon: "📅",
+        duration: 3000,
+      });
+    } else {
+      navigate("/booking");
+    }
+  };
+
+  const handlePrescriptionsClick = (e) => {
+    if (!medicationsData?.items || medicationsData.items.length === 0) {
+      e.preventDefault();
+      toast("Vous n'avez aucun médicament à prendre aujourd'hui", {
+        icon: "💊",
+        duration: 3000,
+      });
+    } else {
+      navigate("/patient/prescriptions");
+    }
+  };
+
+  const handleNotificationsClick = (e) => {
+    if (!notificationsData?.count || notificationsData.count === 0) {
+      e.preventDefault();
+      toast("Vous n'avez aucune nouvelle notification", {
+        icon: "🔔",
+        duration: 3000,
+      });
+    } else {
+      navigate("/notifications");
+    }
+  };
+
   const shortcuts = [
-    {
-      title: "Trouver un médecin",
-      icon: <Search className="h-5 w-5 text-cyan-500" />,
-      link: "/search",
-      color: "from-cyan-500 to-teal-500",
-      description: "Réservez rapidement une consultation.",
-    },
     {
       title: "Téléconsultation",
       icon: <Video className="h-5 w-5 text-cyan-500" />,
@@ -67,34 +114,130 @@ export default function PatientDashboard() {
 
       {/* === Statistiques principales === */}
       <div className="grid md:grid-cols-3 gap-4">
+        {/* 📅 Prochain rendez-vous */}
         <div className="card bg-white dark:bg-slate-900">
-          <div className="text-sm text-slate-500">Prochain rendez-vous</div>
-          <div className="mt-1 font-medium">Demain • 10h30 avec Dr Kouassi</div>
-          <Link className="btn-secondary mt-3 w-full" to="/booking">
+          <div className="text-sm text-slate-500 flex items-center gap-2">
+            <CalendarDays className="h-4 w-4" />
+            Prochain rendez-vous
+          </div>
+          {loadingAppointment ? (
+            <div className="mt-3 flex items-center gap-2 text-slate-400">
+              <Clock className="h-4 w-4 animate-spin" />
+              <span className="text-sm">Chargement...</span>
+            </div>
+          ) : nextAppointmentData?.appointment ? (
+            <>
+              <div className="mt-1 font-medium">
+                {new Date(
+                  nextAppointmentData.appointment.scheduled_at
+                ).toLocaleDateString("fr-FR", {
+                  weekday: "long",
+                  day: "numeric",
+                  month: "long",
+                })}{" "}
+                •{" "}
+                {new Date(
+                  nextAppointmentData.appointment.scheduled_at
+                ).toLocaleTimeString("fr-FR", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </div>
+              <div className="text-sm text-slate-600 dark:text-slate-400 mt-1">
+                {nextAppointmentData.appointment.doctor_name ||
+                  `Dr ${nextAppointmentData.appointment.doctor_id}`}
+              </div>
+            </>
+          ) : (
+            <div className="mt-2 flex items-start gap-2 text-slate-400">
+              <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+              <span className="text-sm">
+                Aucun rendez-vous prévu pour le moment
+              </span>
+            </div>
+          )}
+          <button
+            onClick={handleAppointmentsClick}
+            className="btn-secondary mt-3 w-full"
+          >
             Voir mes rendez-vous
-          </Link>
+          </button>
         </div>
 
+        {/* 💊 Médicaments du jour */}
         <div className="card bg-white dark:bg-slate-900">
-          <div className="text-sm text-slate-500">Médicaments du jour</div>
-          <ul className="mt-2 text-sm list-disc ml-5">
-            <li>Paracétamol 500mg — 08:00</li>
-            <li>Atorvastatine 20mg — 21:00</li>
-          </ul>
-          <Link
+          <div className="text-sm text-slate-500 flex items-center gap-2">
+            <ClipboardList className="h-4 w-4" />
+            Médicaments du jour
+          </div>
+          {loadingMedications ? (
+            <div className="mt-3 flex items-center gap-2 text-slate-400">
+              <Clock className="h-4 w-4 animate-spin" />
+              <span className="text-sm">Chargement...</span>
+            </div>
+          ) : medicationsData?.items && medicationsData.items.length > 0 ? (
+            <ul className="mt-2 text-sm space-y-1">
+              {medicationsData.items.map((med, idx) => (
+                <li key={idx} className="flex items-start gap-2">
+                  <span className="text-cyan-500 mt-1">•</span>
+                  <span>
+                    {med.name} {med.dosage}
+                    {med.times && med.times.length > 0 && (
+                      <span className="text-slate-500 ml-1">
+                        — {med.times.join(", ")}
+                      </span>
+                    )}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <div className="mt-2 flex items-start gap-2 text-slate-400">
+              <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+              <span className="text-sm">
+                Aucun médicament à prendre aujourd'hui
+              </span>
+            </div>
+          )}
+          <button
+            onClick={handlePrescriptionsClick}
             className="btn-secondary mt-3 w-full"
-            to="/patient/prescriptions"
           >
             Voir mes ordonnances
-          </Link>
+          </button>
         </div>
 
+        {/* 🔔 Notifications */}
         <div className="card bg-white dark:bg-slate-900">
-          <div className="text-sm text-slate-500">Notifications</div>
-          <div className="mt-2 text-sm">2 nouveaux messages non lus</div>
-          <Link className="btn-secondary mt-3 w-full" to="/notifications">
+          <div className="text-sm text-slate-500 flex items-center gap-2">
+            <AlertCircle className="h-4 w-4" />
+            Notifications
+          </div>
+          {loadingNotifications ? (
+            <div className="mt-3 flex items-center gap-2 text-slate-400">
+              <Clock className="h-4 w-4 animate-spin" />
+              <span className="text-sm">Chargement...</span>
+            </div>
+          ) : notificationsData?.count > 0 ? (
+            <div className="mt-2 text-sm">
+              <span className="font-semibold text-cyan-600">
+                {notificationsData.count}
+              </span>{" "}
+              {notificationsData.count === 1
+                ? "nouveau message non lu"
+                : "nouveaux messages non lus"}
+            </div>
+          ) : (
+            <div className="mt-2 text-sm text-slate-400">
+              Aucune nouvelle notification
+            </div>
+          )}
+          <button
+            onClick={handleNotificationsClick}
+            className="btn-secondary mt-3 w-full"
+          >
             Ouvrir
-          </Link>
+          </button>
         </div>
       </div>
 

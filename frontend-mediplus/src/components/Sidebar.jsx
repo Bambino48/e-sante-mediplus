@@ -18,7 +18,7 @@ import {
   Video,
 } from "lucide-react";
 import { Fragment } from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth.js";
 import { useUIStore } from "../store/uiStore.js";
 
@@ -35,23 +35,45 @@ export default function Sidebar({
 }) {
   const { sidebarOpen, toggleSidebar } = useUIStore();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const groups = getGroupsBySection(section);
 
   const handleClick = (item) => {
     if (setActiveView) setActiveView(item.key);
   };
 
-  // ✅ Détermination de la photo de profil
-  const photoUrl =
-    user?.photo &&
-    user.photo.trim() !== "" &&
-    !user.photo.startsWith("data:image")
-      ? `${import.meta.env.VITE_API_URL || "http://localhost:8000"}/storage/${
-          user.photo
-        }`
-      : user?.photo && user.photo.trim() !== ""
-      ? user.photo
-      : "https://cdn-icons-png.flaticon.com/512/847/847969.png";
+  // ✅ Gestionnaire spécial pour "Trouver un pro"
+  const handleSearchClick = (e) => {
+    e.preventDefault();
+    console.log("🔍 Sidebar - Clic sur 'Trouver un pro'");
+
+    // Si on utilise le système de vues (DashboardContainer)
+    if (setActiveView) {
+      console.log("🔍 Utilisation de setActiveView pour afficher la recherche");
+      setActiveView("search");
+    } else {
+      // Sinon, navigation classique vers /search
+      console.log("🔍 Navigation vers /search");
+      navigate("/search");
+    }
+  };
+
+  // ✅ Résolution de la photo de profil (utilise photo_url en priorité)
+  const resolvePhoto = () => {
+    if (user?.photo_url) return user.photo_url;
+
+    if (user?.photo && user.photo.trim() !== "") {
+      if (user.photo.startsWith("http")) return user.photo;
+      if (user.photo.startsWith("data:image")) return user.photo;
+      return `${
+        import.meta.env.VITE_API_URL || "http://localhost:8000"
+      }/storage/${user.photo}`;
+    }
+
+    return "https://cdn-icons-png.flaticon.com/512/847/847969.png";
+  };
+
+  const photoUrl = resolvePhoto();
 
   return (
     <aside
@@ -89,6 +111,22 @@ export default function Sidebar({
               <div className="mt-1 space-y-1">
                 {g.items.map((it) => {
                   const isActive = activeView === it.key || false;
+
+                  // ✅ Traitement spécial pour "Trouver un pro" (toujours)
+                  if (it.key === "search") {
+                    return (
+                      <button
+                        key={it.key}
+                        onClick={handleSearchClick}
+                        className={`${baseLink} text-slate-700 dark:text-slate-200 w-full text-left`}
+                        title={it.label}
+                      >
+                        <span className="text-lg">{it.icon}</span>
+                        {sidebarOpen && <span>{it.label}</span>}
+                      </button>
+                    );
+                  }
+
                   return setActiveView ? (
                     <div
                       key={it.key}

@@ -1,6 +1,6 @@
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
 import { MapContainer, Marker, Popup, TileLayer } from "react-leaflet";
 import { useAuth } from "../../hooks/useAuth";
@@ -14,6 +14,9 @@ const userIcon = new L.Icon({
 
 export default function PatientProfile() {
   const { user, updateProfile } = useAuth();
+  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+  const DEFAULT_AVATAR =
+    "https://cdn-icons-png.flaticon.com/512/847/847969.png";
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -21,12 +24,24 @@ export default function PatientProfile() {
     latitude: "",
     longitude: "",
     photo: "",
+    photoFile: null,
   });
 
-  const [preview, setPreview] = useState(
-    "https://cdn-icons-png.flaticon.com/512/847/847969.png"
-  ); // ✅ pour prévisualisation locale
+  const [preview, setPreview] = useState(DEFAULT_AVATAR); // ✅ prévisualisation locale
   const [showMap, setShowMap] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+
+  const resolvePhotoPreview = useCallback(
+    (photoSource, photoUrl) => {
+      if (photoUrl && photoUrl.startsWith("http")) return photoUrl;
+      if (photoSource && photoSource.startsWith("data:image"))
+        return photoSource;
+      if (photoSource && photoSource.startsWith("http")) return photoSource;
+      if (photoSource) return `${API_URL}/storage/${photoSource}`;
+      return DEFAULT_AVATAR;
+    },
+    [API_URL, DEFAULT_AVATAR]
+  );
 
   // ✅ Préremplir les données
   useEffect(() => {
@@ -37,27 +52,14 @@ export default function PatientProfile() {
         phone: user.phone || "",
         latitude: user.latitude || "",
         longitude: user.longitude || "",
-        photo: user.photo || "",
+        photo: user.photo || user.photo_url || "",
+        photoFile: null,
       });
 
-      // ✅ Construction de l'URL complète de la photo (si chemin en base)
-      if (
-        user.photo &&
-        user.photo.trim() !== "" &&
-        !user.photo.startsWith("data:image")
-      ) {
-        setPreview(
-          `${import.meta.env.VITE_API_URL || "http://localhost:8000"}/storage/${
-            user.photo
-          }`
-        );
-      } else if (user.photo && user.photo.trim() !== "") {
-        setPreview(user.photo);
-      } else {
-        setPreview("https://cdn-icons-png.flaticon.com/512/847/847969.png");
-      }
+      const nextPreview = resolvePhotoPreview(user.photo, user.photo_url);
+      setPreview(nextPreview);
     }
-  }, [user]);
+  }, [user, resolvePhotoPreview]);
 
   // ✅ Géolocalisation (non intrusive)
   useEffect(() => {
@@ -79,10 +81,33 @@ export default function PatientProfile() {
   const handlePhotoChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
+
+    // Validation du fichier
+    if (!file.type.startsWith("image/")) {
+      toast.error("Veuillez sélectionner un fichier image valide");
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      // 5MB max
+      toast.error("La taille de l'image ne doit pas dépasser 5MB");
+      return;
+    }
+
+    setUploadingPhoto(true);
     const reader = new FileReader();
     reader.onloadend = () => {
-      setForm((prev) => ({ ...prev, photo: reader.result }));
-      setPreview(reader.result); // ✅ Affiche directement l’image
+      setForm((prev) => ({
+        ...prev,
+        photo: reader.result,
+        photoFile: file,
+      }));
+      setPreview(reader.result); // ✅ Affiche directement l'image
+      setUploadingPhoto(false);
+    };
+    reader.onerror = () => {
+      setUploadingPhoto(false);
+      toast.error("Impossible de lire le fichier sélectionné");
     };
     reader.readAsDataURL(file);
   };
@@ -90,10 +115,25 @@ export default function PatientProfile() {
   // ✅ Soumission du formulaire
   const onSubmit = async (e) => {
     e.preventDefault();
+
     try {
-      await updateProfile(form);
+      const payload = { ...form };
+      if (!payload.photoFile) {
+        delete payload.photoFile;
+      }
+
+      await updateProfile(payload);
+
+      // ✅ Le useEffect va automatiquement mettre à jour la preview
+      // quand le store Zustand sera mis à jour - pas besoin de setPreview manuel
+      setForm((prev) => ({
+        ...prev,
+        photoFile: null, // Réinitialiser le fichier après upload
+      }));
+
       toast.success("Profil mis à jour avec succès !");
-    } catch {
+    } catch (error) {
+      console.error("❌ Erreur mise à jour profil:", error);
       toast.error("Erreur lors de la mise à jour du profil.");
     }
   };
@@ -121,19 +161,31 @@ export default function PatientProfile() {
             <img
               src={preview}
               alt="Profil"
-              className="h-28 w-28 rounded-full object-cover border-4 border-cyan-500 shadow-md"
+              className={`h-28 w-28 rounded-full object-cover border-4 border-cyan-500 shadow-md ${
+                uploadingPhoto ? "opacity-60" : ""
+              }`}
             />
+            {uploadingPhoto && (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-6 h-6 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin"></div>
+              </div>
+            )}
             <label
               htmlFor="photo"
-              className="absolute bottom-0 right-0 bg-cyan-500 text-white text-xs px-3 py-1 rounded-full cursor-pointer hover:bg-cyan-600 transition"
+              className={`absolute bottom-0 right-0 bg-cyan-500 text-white text-xs px-3 py-1 rounded-full transition ${
+                uploadingPhoto
+                  ? "cursor-not-allowed opacity-60"
+                  : "cursor-pointer hover:bg-cyan-600"
+              }`}
             >
-              Changer
+              {uploadingPhoto ? "Chargement..." : "Changer"}
             </label>
             <input
               id="photo"
               type="file"
               accept="image/*"
               onChange={handlePhotoChange}
+              disabled={uploadingPhoto}
               className="hidden"
             />
           </div>

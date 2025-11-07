@@ -182,20 +182,37 @@ export function useAuth() {
       setLoading(true);
       try {
         const res = await updateProfileRequest(token, form);
-        const userData = res.user || res;
+
+        let userData = res?.user || res?.data?.user || res?.data || res;
+
+        if (!userData || typeof userData !== "object") {
+          const fresh = await getCurrentUser(token);
+          userData = fresh.user || fresh;
+        }
+
+        if (!userData?.photo && !userData?.photo_url) {
+          try {
+            const fresh = await getCurrentUser(token);
+            userData = fresh.user || fresh;
+          } catch (refreshError) {
+            logError("updateProfile.refresh", refreshError);
+          }
+        }
 
         // Mettre à jour le cache utilisateur
         if (userData) {
           localStorage.setItem("cachedUser", JSON.stringify(userData));
+          setUser(userData);
         }
 
-        setUser(userData);
-        toast.success("Profil mis à jour !");
+        // Retourner les données pour utilisation dans le composant
+        return userData;
       } catch (e) {
         logError("updateProfile", e);
         toast.error(
           getErrorMessage(e) || "Erreur lors de la mise à jour du profil"
         );
+        throw e; // Re-lancer l'erreur pour gestion dans le composant
       } finally {
         setLoading(false);
       }

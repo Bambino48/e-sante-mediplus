@@ -1,5 +1,16 @@
-/* eslint-disable no-unused-vars */
 import api from "./axiosInstance.js";
+
+// ✅ API Réelles - Prochain rendez-vous du patient
+export async function getNextAppointment() {
+    const { data } = await api.get("/patient/appointments/next");
+    return data; // { appointment: {...} } ou { appointment: null }
+}
+
+// ✅ API Réelles - Liste des rendez-vous du patient
+export async function getPatientAppointments() {
+    const { data } = await api.get("/patient/appointments");
+    return data; // { items: [...] }
+}
 
 // 🔗 API réelles (décommente quand le backend sera prêt)
 // export async function getDoctorAvailabilities(doctorId, params) {
@@ -16,7 +27,11 @@ import api from "./axiosInstance.js";
 export async function getDoctorAvailabilities(doctorId) {
     // Génère une semaine de slots fictifs
     const today = new Date();
-    const start = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const start = new Date(
+        today.getFullYear(),
+        today.getMonth(),
+        today.getDate()
+    );
     const byDay = {};
     for (let i = 0; i < 7; i++) {
         const d = new Date(start);
@@ -37,14 +52,35 @@ export async function bookAppointment(payload) {
         throw new Error("Champs de réservation incomplets");
     }
     await new Promise((r) => setTimeout(r, 500)); // simulate latency
-    return { id: Math.floor(Math.random() * 100000), status: "pending", ...payload };
+    return {
+        id: Math.floor(Math.random() * 100000),
+        status: "pending",
+        ...payload,
+    };
 }
 
 function mockDoctor(id) {
     const map = {
-        1: { id: 1, name: "Dr Marie Kouassi", specialty: "Cardiologie", fees: 15000 },
-        2: { id: 2, name: "Clinique Santé Plus", specialty: "Centre médical", fees: 10000 },
+        1: {
+            id: 1,
+            name: "Dr Marie Kouassi",
+            specialty: "Cardiologie",
+            fees: 15000,
+        },
+        2: {
+            id: 2,
+            name: "Clinique Santé Plus",
+            specialty: "Centre médical",
+            fees: 10000,
+        },
         3: { id: 3, name: "Dr Mamadou Keita", specialty: "Pédiatrie", fees: 12000 },
     };
-    return map[id] || { id, name: `Docteur #${id}`, specialty: "Médecine générale", fees: 10000 };
+    return (
+        map[id] || {
+            id,
+            name: `Docteur #${id}`,
+            specialty: "Médecine générale",
+            fees: 10000,
+        }
+    );
 }
