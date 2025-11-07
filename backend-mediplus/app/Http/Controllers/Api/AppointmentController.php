@@ -24,6 +24,24 @@ class AppointmentController extends Controller
         return response()->json(['appointments' => $appointments]);
     }
 
+    // GET /api/patient/appointments/next
+    public function next(Request $request)
+    {
+        $user = $request->user();
+        if (!$user->isPatient()) {
+            return response()->json(['message' => 'Accès refusé'], 403);
+        }
+
+        $nextAppointment = Appointment::where('patient_id', $user->id)
+            ->where('scheduled_at', '>', now())
+            ->where('status', '!=', 'cancelled')
+            ->with('doctor')
+            ->orderBy('scheduled_at', 'asc')
+            ->first();
+
+        return response()->json(['appointment' => $nextAppointment]);
+    }
+
     // POST /api/patient/appointments
     public function store(Request $request)
     {

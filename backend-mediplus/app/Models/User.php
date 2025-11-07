@@ -30,6 +30,17 @@ class User extends Authenticatable
         'longitude' => 'float',
     ];
 
+    protected $appends = ['photo_url'];
+
+    // Accesseur pour l'URL complète de la photo
+    public function getPhotoUrlAttribute()
+    {
+        if ($this->photo) {
+            return asset('storage/' . $this->photo);
+        }
+        return null;
+    }
+
     // Relations
     public function doctorProfile()
     {

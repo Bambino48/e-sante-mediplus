@@ -144,12 +144,6 @@ class AuthController extends Controller
 
         $user->update($data);
 
-        // Ajouter l'URL complète de la photo dans la réponse
-        $userData = $user->toArray();
-        if ($user->photo) {
-            $userData['photo_url'] = asset('storage/' . $user->photo);
-        }
-
-        return response()->json(['message' => 'Profil mis à jour', 'user' => $userData]);
+        return response()->json(['message' => 'Profil mis à jour', 'user' => $user]);
     }
 }

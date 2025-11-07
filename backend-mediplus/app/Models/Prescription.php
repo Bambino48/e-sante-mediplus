@@ -30,4 +30,12 @@ class Prescription extends Model
     {
         return $this->belongsTo(Appointment::class);
     }
+
+    /**
+     * Relation : Une prescription a plusieurs médicaments
+     */
+    public function medications()
+    {
+        return $this->hasMany(Medication::class);
+    }
 }

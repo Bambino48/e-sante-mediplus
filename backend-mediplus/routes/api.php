@@ -27,6 +27,7 @@ use App\Http\Controllers\Api\AdminController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\ConfigController;
 use App\Http\Controllers\Api\PatientProfileController;
+use App\Http\Controllers\Api\MedicationController;
 
 // ===========================================================
 // Phase 1 — Authentification & Gestion des Profils
@@ -54,6 +55,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/pro/availability', [AvailabilityController::class, 'store']);
 
     Route::get('/patient/appointments', [AppointmentController::class, 'index']);
+    Route::get('/patient/appointments/next', [AppointmentController::class, 'next']);
     Route::post('/patient/appointments', [AppointmentController::class, 'store']);
     Route::post('/pro/appointments/{id}/confirm', [AppointmentController::class, 'confirm']);
 
@@ -70,6 +72,17 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/pro/prescriptions', [PrescriptionController::class, 'store']);
     Route::get('/patient/prescriptions', [PrescriptionController::class, 'patientList']);
     Route::get('/patient/prescriptions/{id}/download', [PrescriptionController::class, 'download']);
+
+    // =======================================================
+    // Phase 5b — Gestion des Médicaments
+    // =======================================================
+    Route::get('/medications', [MedicationController::class, 'index']);
+    Route::get('/medications/today', [MedicationController::class, 'today']);
+    Route::get('/medications/{id}', [MedicationController::class, 'show']);
+    Route::post('/medications', [MedicationController::class, 'store']);
+    Route::put('/medications/{id}', [MedicationController::class, 'update']);
+    Route::delete('/medications/{id}', [MedicationController::class, 'destroy']);
+    Route::get('/prescriptions/{prescriptionId}/medications', [MedicationController::class, 'byPrescription']);
 
     // =======================================================
     // Phase 6 — Intelligence Artificielle de Triage Médical
@@ -93,6 +106,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/admin/reports', [AdminController::class, 'reports']);
 
     Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::get('/notifications/unread', [NotificationController::class, 'unread']);
 
     // =======================================================
     // Phase 9 — Configuration et Intégrations Système

@@ -18,4 +18,16 @@ class NotificationController extends Controller
 
         return response()->json(['notifications' => $notifications]);
     }
+
+    // GET /api/notifications/unread
+    public function unread(Request $request)
+    {
+        $user = $request->user();
+        $notifications = NotificationCustom::where('user_id', $user->id)
+            ->where('is_read', false)
+            ->orderByDesc('created_at')
+            ->get();
+
+        return response()->json(['notifications' => $notifications]);
+    }
 }
