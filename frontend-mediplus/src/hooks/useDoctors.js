@@ -14,7 +14,12 @@ import {
 export function useDoctors(params = {}) {
   return useQuery({
     queryKey: ["doctors", params],
-    queryFn: () => getDoctorsList(params),
+    queryFn: async () => {
+      console.log("🔄 useDoctors - Fetching doctors with params:", params);
+      const result = await getDoctorsList(params);
+      console.log("✅ useDoctors - API response:", result);
+      return result;
+    },
     staleTime: 5 * 60 * 1000, // 5 minutes
     cacheTime: 10 * 60 * 1000, // 10 minutes
   });

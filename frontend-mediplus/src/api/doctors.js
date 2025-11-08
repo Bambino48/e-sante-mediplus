@@ -13,7 +13,10 @@ import api from "./axiosInstance";
  * @returns {Promise<Object>} Liste des docteurs avec pagination
  */
 export const getDoctorsList = async (params = {}) => {
+  console.log("🌐 API getDoctorsList - Calling /doctors with params:", params);
   const response = await api.get("/doctors", { params });
+  console.log("🌐 API getDoctorsList - Raw response:", response);
+  console.log("🌐 API getDoctorsList - Response data:", response.data);
   // Retourne directement la structure complète pour que le composant puisse accéder aux docteurs
   return response.data;
 };

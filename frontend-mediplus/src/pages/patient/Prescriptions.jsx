@@ -21,7 +21,6 @@ import {
     getPatientPrescriptions,
     markDoseTaken,
 } from "../../api/prescriptions.js";
-import MedicationItem from "../../components/MedicationItem.jsx";
 import PrescriptionCard from "../../components/PrescriptionCard.jsx";
 import { usePrescriptionsStore } from "../../store/prescriptionsStore.js";
 
@@ -407,26 +406,13 @@ export default function PatientPrescriptions() {
 
                                     <PrescriptionCard prescription={prescription} />
 
-                                    {prescription.medications &&
-                                        prescription.medications.length > 0 && (
-                                            <div className="space-y-3">
-                                                <h4 className="text-sm font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                                                    <Pill className="h-4 w-4" />
-                                                    Médicaments prescrits (
-                                                    {prescription.medications.length})
-                                                </h4>
-                                                <div className="grid sm:grid-cols-2 gap-3">
-                                                    {prescription.medications.map((med) => (
-                                                        <MedicationItem
-                                                            key={med.id}
-                                                            med={med}
-                                                            onTake={(id) => takeMedMutation.mutate(id)}
-                                                            disabled={prescription.status !== "active"}
-                                                        />
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        )}
+                                    <MedicationList
+                                        medications={prescription.medications}
+                                        onTakeMedication={(id) => takeMedMutation.mutate(id)}
+                                        disabled={prescription.status !== "active"}
+                                        showHeader={true}
+                                        headerTitle="Médicaments prescrits"
+                                    />
                                 </Motion.div>
                             );
                         })}
