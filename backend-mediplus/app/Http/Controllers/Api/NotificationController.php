@@ -24,7 +24,7 @@ class NotificationController extends Controller
     {
         $user = $request->user();
         $notifications = NotificationCustom::where('user_id', $user->id)
-            ->where('is_read', false)
+            ->whereNull('read_at')
             ->orderByDesc('created_at')
             ->get();
 

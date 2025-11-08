@@ -28,6 +28,7 @@ use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\ConfigController;
 use App\Http\Controllers\Api\PatientProfileController;
 use App\Http\Controllers\Api\MedicationController;
+use App\Http\Controllers\Api\ConsultationController;
 
 // ===========================================================
 // Phase 1 — Authentification & Gestion des Profils
@@ -57,6 +58,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/patient/appointments', [AppointmentController::class, 'index']);
     Route::get('/patient/appointments/next', [AppointmentController::class, 'next']);
     Route::post('/patient/appointments', [AppointmentController::class, 'store']);
+    Route::put('/patient/appointments/{id}', [AppointmentController::class, 'update']);
+    Route::delete('/patient/appointments/{id}', [AppointmentController::class, 'cancel']);
     Route::post('/pro/appointments/{id}/confirm', [AppointmentController::class, 'confirm']);
 
     // =======================================================
@@ -120,6 +123,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/profile', [PatientProfileController::class, 'store']);
         Route::put('/profile', [PatientProfileController::class, 'update']);
         Route::delete('/profile', [PatientProfileController::class, 'destroy']);
+        Route::get('/consultations/recent', [ConsultationController::class, 'recent']);
     });
 });
 

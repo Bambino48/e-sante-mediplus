@@ -81,4 +81,58 @@ class AppointmentController extends Controller
         $appointment->update(['status' => 'confirmed']);
         return response()->json(['message' => 'Rendez-vous confirmé', 'appointment' => $appointment]);
     }
+
+    // PUT /api/patient/appointments/{id}
+    public function update(Request $request, $id)
+    {
+        $user = $request->user();
+        if (!$user->isPatient()) {
+            return response()->json(['message' => 'Accès refusé'], 403);
+        }
+
+        $appointment = Appointment::where('id', $id)
+            ->where('patient_id', $user->id)
+            ->firstOrFail();
+
+        // Ne peut pas modifier un rendez-vous déjà terminé ou annulé
+        if (in_array($appointment->status, ['completed', 'cancelled'])) {
+            return response()->json(['message' => 'Impossible de modifier ce rendez-vous'], 422);
+        }
+
+        $data = $request->validate([
+            'scheduled_at' => 'sometimes|date|after:now',
+            'reason' => 'nullable|string',
+        ]);
+
+        $appointment->update($data);
+
+        return response()->json(['message' => 'Rendez-vous modifié', 'appointment' => $appointment]);
+    }
+
+    // DELETE /api/patient/appointments/{id}
+    public function cancel(Request $request, $id)
+    {
+        $user = $request->user();
+        if (!$user->isPatient()) {
+            return response()->json(['message' => 'Accès refusé'], 403);
+        }
+
+        $appointment = Appointment::where('id', $id)
+            ->where('patient_id', $user->id)
+            ->firstOrFail();
+
+        // Ne peut pas annuler un rendez-vous déjà terminé
+        if ($appointment->status === 'completed') {
+            return response()->json(['message' => 'Impossible d\'annuler un rendez-vous terminé'], 422);
+        }
+
+        // Ne peut pas annuler un rendez-vous déjà annulé
+        if ($appointment->status === 'cancelled') {
+            return response()->json(['message' => 'Ce rendez-vous est déjà annulé'], 422);
+        }
+
+        $appointment->update(['status' => 'cancelled']);
+
+        return response()->json(['message' => 'Rendez-vous annulé', 'appointment' => $appointment]);
+    }
 }
