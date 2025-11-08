@@ -17,6 +17,7 @@ import { useNavigate } from "react-router-dom";
 import { getDoctorsList } from "../../api/doctors.js";
 import DoctorCarousel from "../../components/DoctorCarousel";
 import PatientMedicalProfile from "../../components/PatientMedicalProfile";
+import { useAuth } from "../../hooks/useAuth";
 import {
   useNextAppointment,
   useTodayMedications,
@@ -234,13 +235,26 @@ export default function PatientDashboard() {
     fetchDoctors();
   }, []);
 
-  // ✅ Récupération des données en temps réel
-  const { data: nextAppointmentData, isLoading: loadingAppointment } =
-    useNextAppointment();
-  const { data: medicationsData, isLoading: loadingMedications } =
-    useTodayMedications();
-  const { data: notificationsData, isLoading: loadingNotifications } =
-    useUnreadNotifications();
+  // ✅ Vérification de l'authentification
+  const { user } = useAuth();
+  const isAuthenticated = !!user;
+
+  // ✅ Récupération des données en temps réel (désactivées si non authentifié)
+  const {
+    data: nextAppointmentData,
+    isLoading: loadingAppointment,
+    error: appointmentError,
+  } = useNextAppointment();
+  const {
+    data: medicationsData,
+    isLoading: loadingMedications,
+    error: medicationsError,
+  } = useTodayMedications();
+  const {
+    data: notificationsData,
+    isLoading: loadingNotifications,
+    error: notificationsError,
+  } = useUnreadNotifications();
 
   // ✅ Gestionnaires de clics intelligents
   const handleAppointmentsClick = (e) => {
@@ -381,6 +395,14 @@ export default function PatientDashboard() {
                   <Clock className="h-3 w-3 animate-spin" />
                   <span className="text-xs">Chargement...</span>
                 </div>
+              ) : medicationsError ? (
+                <div className="text-xs text-red-600 dark:text-red-400">
+                  Erreur de chargement
+                </div>
+              ) : !isAuthenticated ? (
+                <div className="text-xs text-cyan-600 dark:text-cyan-400">
+                  Connectez-vous pour voir vos médicaments
+                </div>
               ) : medicationsData?.items && medicationsData.items.length > 0 ? (
                 <div className="space-y-1">
                   <div className="text-xs text-cyan-700 dark:text-cyan-300 font-medium">
@@ -411,6 +433,14 @@ export default function PatientDashboard() {
                 <div className="flex items-center gap-2 text-emerald-600">
                   <Clock className="h-3 w-3 animate-spin" />
                   <span className="text-xs">Chargement...</span>
+                </div>
+              ) : appointmentError ? (
+                <div className="text-xs text-red-600 dark:text-red-400">
+                  Erreur de chargement
+                </div>
+              ) : !isAuthenticated ? (
+                <div className="text-xs text-emerald-600 dark:text-emerald-400">
+                  Connectez-vous pour voir vos rendez-vous
                 </div>
               ) : nextAppointmentData?.appointment ? (
                 <div className="space-y-1">
@@ -446,6 +476,14 @@ export default function PatientDashboard() {
                 <div className="flex items-center gap-2 text-amber-600">
                   <Clock className="h-3 w-3 animate-spin" />
                   <span className="text-xs">Chargement...</span>
+                </div>
+              ) : notificationsError ? (
+                <div className="text-xs text-red-600 dark:text-red-400">
+                  Erreur de chargement
+                </div>
+              ) : !isAuthenticated ? (
+                <div className="text-xs text-amber-600 dark:text-amber-400">
+                  Connectez-vous pour voir vos alertes
                 </div>
               ) : notificationsData?.count > 0 ? (
                 <div className="space-y-1">
@@ -518,6 +556,31 @@ export default function PatientDashboard() {
               <Clock className="h-4 w-4 animate-spin" />
               <span className="text-sm">Chargement...</span>
             </div>
+          ) : appointmentError ? (
+            <div className="mt-3 text-sm text-red-600 dark:text-red-400">
+              Erreur de chargement des rendez-vous
+            </div>
+          ) : !isAuthenticated ? (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mt-4 text-center py-6"
+            >
+              <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-3">
+                <CalendarDays className="h-8 w-8 text-slate-400" />
+              </div>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mb-3">
+                Connectez-vous pour voir vos rendez-vous
+              </p>
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => navigate("/auth/login")}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-linear-to-r from-cyan-500 to-teal-500 text-white rounded-lg text-sm font-medium hover:from-cyan-600 hover:to-teal-600 transition-all duration-200 shadow-sm"
+              >
+                Se connecter
+              </motion.button>
+            </motion.div>
           ) : nextAppointmentData?.appointment ? (
             <>
               <div className="mt-1 font-medium">
@@ -586,6 +649,23 @@ export default function PatientDashboard() {
               <Clock className="h-4 w-4 animate-spin" />
               <span className="text-sm">Chargement...</span>
             </div>
+          ) : medicationsError ? (
+            <div className="mt-3 text-sm text-red-600 dark:text-red-400">
+              Erreur de chargement des médicaments
+            </div>
+          ) : !isAuthenticated ? (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="mt-4 text-center py-4"
+            >
+              <div className="w-12 h-12 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-2">
+                <Pill className="h-6 w-6 text-slate-400" />
+              </div>
+              <p className="text-sm text-slate-500 dark:text-slate-400">
+                Connectez-vous pour voir vos médicaments
+              </p>
+            </motion.div>
           ) : medicationsData?.items && medicationsData.items.length > 0 ? (
             <div className="mt-3 space-y-3">
               {medicationsData.items.slice(0, 3).map((med, idx) => {
@@ -714,6 +794,23 @@ export default function PatientDashboard() {
               <Clock className="h-4 w-4 animate-spin" />
               <span className="text-sm">Chargement...</span>
             </div>
+          ) : notificationsError ? (
+            <div className="mt-3 text-sm text-red-600 dark:text-red-400">
+              Erreur de chargement des notifications
+            </div>
+          ) : !isAuthenticated ? (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="mt-4 text-center py-6"
+            >
+              <div className="w-12 h-12 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-2">
+                <AlertCircle className="h-6 w-6 text-slate-400" />
+              </div>
+              <p className="text-sm text-slate-500 dark:text-slate-400">
+                Connectez-vous pour voir vos notifications
+              </p>
+            </motion.div>
           ) : notificationsData?.count > 0 ? (
             <div className="mt-3 space-y-3">
               {/* Notification prioritaire - Résultats d'examens */}
