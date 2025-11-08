@@ -7,12 +7,13 @@ import {
   ClipboardList,
   Clock,
   Heart,
+  Pill,
   Stethoscope,
   Video,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { getDoctorsList } from "../../api/doctors.js";
 import DoctorCarousel from "../../components/DoctorCarousel";
 import PatientMedicalProfile from "../../components/PatientMedicalProfile";
@@ -22,7 +23,7 @@ import {
   useUnreadNotifications,
 } from "../../hooks/useDashboard.js";
 
-// Carte docteur (copiée depuis Home.jsx)
+// Carte docteur améliorée
 function DoctorCard({ doctor }) {
   const doctorName =
     doctor.name || `Dr. ${doctor.first_name} ${doctor.last_name}` || "Docteur";
@@ -32,54 +33,158 @@ function DoctorCard({ doctor }) {
   const fee = doctor.consultation_fee || doctor.fees || 15000;
   const nextSlot = doctor.next_availability || "Sur RDV";
   const distance = doctor.distance_km ? `${doctor.distance_km} km` : "";
+  const experience = doctor.experience_years || doctor.years_experience;
+
+  // Badge color based on specialty
+  const getSpecialtyColor = (specialty) => {
+    const colors = {
+      "Médecine générale": "from-blue-500 to-cyan-500",
+      Cardiologie: "from-red-500 to-pink-500",
+      Dermatologie: "from-purple-500 to-violet-500",
+      Ophtalmologie: "from-green-500 to-emerald-500",
+      Pédiatrie: "from-yellow-500 to-orange-500",
+      Gynécologie: "from-rose-500 to-pink-500",
+      Psychiatrie: "from-indigo-500 to-purple-500",
+    };
+    return colors[specialty] || "from-cyan-500 to-teal-500";
+  };
+
+  const specialtyColor = getSpecialtyColor(specialty);
 
   return (
-    <div className="card">
-      <div className="h-36 bg-slate-200/60 dark:bg-slate-800/60 rounded-xl flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 bg-cyan-500/20 rounded-full flex items-center justify-center mx-auto mb-2">
+    <motion.div
+      whileHover={{ y: -4, scale: 1.02 }}
+      whileTap={{ scale: 0.98 }}
+      transition={{ duration: 0.2 }}
+      className="group relative bg-white dark:bg-slate-900 rounded-2xl shadow-sm hover:shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden transition-all duration-300"
+    >
+      {/* Header avec gradient subtil */}
+      <div
+        className={`h-20 bg-linear-to-r ${specialtyColor} opacity-5 group-hover:opacity-10 transition-opacity duration-300`}
+      />
+
+      {/* Avatar et informations principales */}
+      <div className="relative px-4 pb-4">
+        <div className="flex items-start gap-3 -mt-8">
+          {/* Avatar */}
+          <motion.div whileHover={{ scale: 1.05 }} className="relative">
+            <div className="w-16 h-16 bg-white dark:bg-slate-800 rounded-xl shadow-lg flex items-center justify-center border-2 border-white dark:border-slate-700">
+              <div
+                className={`w-14 h-14 bg-linear-to-r ${specialtyColor} rounded-lg flex items-center justify-center`}
+              >
+                <Stethoscope className="h-7 w-7 text-white" />
+              </div>
+            </div>
+            {/* Badge de disponibilité */}
+            <div className="absolute -top-1 -right-1 w-5 h-5 bg-green-500 rounded-full border-2 border-white dark:border-slate-800 flex items-center justify-center">
+              <div className="w-2 h-2 bg-white rounded-full"></div>
+            </div>
+          </motion.div>
+
+          {/* Informations */}
+          <div className="flex-1 min-w-0 pt-2">
+            <h3 className="font-semibold text-slate-900 dark:text-slate-100 truncate">
+              {doctorName}
+            </h3>
+
+            {/* Badge spécialité */}
+            <div
+              className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-linear-to-r ${specialtyColor} text-white mt-1`}
+            >
+              <Heart className="h-3 w-3" />
+              {specialty}
+            </div>
+
+            {/* Rating et expérience */}
+            <div className="flex items-center gap-3 mt-2 text-sm text-slate-600 dark:text-slate-400">
+              <div className="flex items-center gap-1">
+                <span className="text-yellow-500">⭐</span>
+                <span className="font-medium">{rating.toFixed(1)}</span>
+              </div>
+              {experience && (
+                <div className="flex items-center gap-1">
+                  <Clock className="h-3 w-3" />
+                  <span>{experience} ans exp.</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Détails supplémentaires */}
+        <div className="mt-4 space-y-2">
+          <div className="flex items-center justify-between text-sm">
+            <div className="flex items-center gap-1 text-slate-600 dark:text-slate-400">
+              <Clock className="h-4 w-4" />
+              <span>Prochaine dispo: {nextSlot}</span>
+            </div>
+            <div className="font-semibold text-cyan-600 dark:text-cyan-400">
+              {fee.toLocaleString()} FCFA
+            </div>
+          </div>
+
+          {distance && (
+            <div className="flex items-center gap-1 text-sm text-slate-500 dark:text-slate-400">
+              <svg
+                className="h-4 w-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                />
+              </svg>
+              <span>{distance}</span>
+            </div>
+          )}
+        </div>
+
+        {/* Boutons d'action */}
+        <div className="mt-4 flex gap-2">
+          <motion.a
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            href={`/doctor/${doctor.id}`}
+            className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors duration-200"
+          >
             <svg
-              className="h-8 w-8 text-cyan-600"
+              className="h-4 w-4"
               fill="none"
               stroke="currentColor"
-              strokeWidth="2"
               viewBox="0 0 24 24"
             >
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                d="M19 11a7 7 0 11-14 0 7 7 0 0114 0z"
-              />
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M12 19v2m0 0h-2m2 0h2"
+                strokeWidth={2}
+                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
               />
             </svg>
-          </div>
-          <div className="text-xs text-slate-600 dark:text-slate-400">
-            ⭐ {rating.toFixed(1)}
-          </div>
+            Détails
+          </motion.a>
+
+          <motion.a
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            href={`/booking/${doctor.id}`}
+            className={`flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-white bg-linear-to-r ${specialtyColor} hover:shadow-lg rounded-lg transition-all duration-200`}
+          >
+            <CalendarDays className="h-4 w-4" />
+            Réserver
+          </motion.a>
         </div>
       </div>
-      <div className="mt-3">
-        <div className="font-medium">
-          {doctorName} — {specialty}
-        </div>
-        <div className="text-sm text-slate-500">
-          {distance && `${distance} · `}Dès {nextSlot} · {fee.toLocaleString()}{" "}
-          FCFA
-        </div>
-      </div>
-      <div className="mt-4 flex gap-2">
-        <a className="btn-secondary flex-1" href={`/doctor/${doctor.id}`}>
-          Détails
-        </a>
-        <a className="btn-primary flex-1" href={`/booking/${doctor.id}`}>
-          Réserver
-        </a>
-      </div>
-    </div>
+    </motion.div>
   );
 }
 
@@ -215,9 +320,190 @@ export default function PatientDashboard() {
 
   return (
     <section className="w-full px-4 sm:px-6 lg:px-8 py-8">
-      <h1 className="text-2xl font-semibold mb-4 text-slate-800 dark:text-slate-100">
-        Bienvenue sur votre espace patient 👋
-      </h1>
+      {/* Message de bienvenue personnalisé */}
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="mb-6 p-6 bg-linear-to-r from-cyan-50 to-teal-50 dark:from-slate-800 dark:to-slate-700 rounded-xl border border-cyan-100 dark:border-slate-600"
+      >
+        <div className="flex items-center gap-3 mb-2">
+          <div className="w-10 h-10 bg-linear-to-r from-cyan-500 to-teal-500 rounded-full flex items-center justify-center">
+            <Heart className="h-5 w-5 text-white" />
+          </div>
+          <h1 className="text-xl font-semibold text-slate-800 dark:text-slate-100">
+            Bonjour ! Prêt à prendre soin de votre santé ?
+          </h1>
+        </div>
+        <p className="text-sm text-slate-600 dark:text-slate-300">
+          Votre tableau de bord personnel pour gérer vos rendez-vous,
+          médicaments et consultations médicales.
+        </p>
+      </motion.div>
+
+      {/* === Section Aujourd'hui - Priorité haute === */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+        className="mb-8"
+      >
+        <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 bg-linear-to-r from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center">
+              <CalendarDays className="h-5 w-5 text-white" />
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                Aujourd'hui
+              </h2>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                {new Date().toLocaleDateString("fr-FR", {
+                  weekday: "long",
+                  day: "numeric",
+                  month: "long",
+                  year: "numeric",
+                })}
+              </p>
+            </div>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-4">
+            {/* Médicaments prioritaires */}
+            <div className="bg-cyan-50 dark:bg-slate-800/50 rounded-xl p-4 border border-cyan-100 dark:border-slate-700">
+              <div className="flex items-center gap-2 mb-2">
+                <Pill className="h-4 w-4 text-cyan-600" />
+                <span className="text-sm font-medium text-cyan-900 dark:text-cyan-100">
+                  Médicaments
+                </span>
+              </div>
+              {loadingMedications ? (
+                <div className="flex items-center gap-2 text-cyan-600">
+                  <Clock className="h-3 w-3 animate-spin" />
+                  <span className="text-xs">Chargement...</span>
+                </div>
+              ) : medicationsData?.items && medicationsData.items.length > 0 ? (
+                <div className="space-y-1">
+                  <div className="text-xs text-cyan-700 dark:text-cyan-300 font-medium">
+                    {medicationsData.items.length} médicament
+                    {medicationsData.items.length > 1 ? "s" : ""} à prendre
+                  </div>
+                  <div className="text-xs text-cyan-600 dark:text-cyan-400">
+                    Prochaine prise:{" "}
+                    {medicationsData.items[0]?.times?.[0] || "À définir"}
+                  </div>
+                </div>
+              ) : (
+                <div className="text-xs text-cyan-600 dark:text-cyan-400">
+                  Aucun médicament prévu
+                </div>
+              )}
+            </div>
+
+            {/* Rendez-vous du jour */}
+            <div className="bg-emerald-50 dark:bg-slate-800/50 rounded-xl p-4 border border-emerald-100 dark:border-slate-700">
+              <div className="flex items-center gap-2 mb-2">
+                <Stethoscope className="h-4 w-4 text-emerald-600" />
+                <span className="text-sm font-medium text-emerald-900 dark:text-emerald-100">
+                  Rendez-vous
+                </span>
+              </div>
+              {loadingAppointment ? (
+                <div className="flex items-center gap-2 text-emerald-600">
+                  <Clock className="h-3 w-3 animate-spin" />
+                  <span className="text-xs">Chargement...</span>
+                </div>
+              ) : nextAppointmentData?.appointment ? (
+                <div className="space-y-1">
+                  <div className="text-xs text-emerald-700 dark:text-emerald-300 font-medium">
+                    {nextAppointmentData.appointment.doctor_name ||
+                      `Dr ${nextAppointmentData.appointment.doctor_id}`}
+                  </div>
+                  <div className="text-xs text-emerald-600 dark:text-emerald-400">
+                    {new Date(
+                      nextAppointmentData.appointment.scheduled_at
+                    ).toLocaleTimeString("fr-FR", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </div>
+                </div>
+              ) : (
+                <div className="text-xs text-emerald-600 dark:text-emerald-400">
+                  Aucun rendez-vous aujourd'hui
+                </div>
+              )}
+            </div>
+
+            {/* Notifications importantes */}
+            <div className="bg-amber-50 dark:bg-slate-800/50 rounded-xl p-4 border border-amber-100 dark:border-slate-700">
+              <div className="flex items-center gap-2 mb-2">
+                <AlertCircle className="h-4 w-4 text-amber-600" />
+                <span className="text-sm font-medium text-amber-900 dark:text-amber-100">
+                  Alertes
+                </span>
+              </div>
+              {loadingNotifications ? (
+                <div className="flex items-center gap-2 text-amber-600">
+                  <Clock className="h-3 w-3 animate-spin" />
+                  <span className="text-xs">Chargement...</span>
+                </div>
+              ) : notificationsData?.count > 0 ? (
+                <div className="space-y-1">
+                  <div className="text-xs text-amber-700 dark:text-amber-300 font-medium">
+                    {notificationsData.count} notification
+                    {notificationsData.count > 1 ? "s" : ""} non lue
+                    {notificationsData.count > 1 ? "s" : ""}
+                  </div>
+                  <div className="text-xs text-amber-600 dark:text-amber-400">
+                    À consulter rapidement
+                  </div>
+                </div>
+              ) : (
+                <div className="text-xs text-amber-600 dark:text-amber-400">
+                  Aucune alerte active
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Actions rapides du jour */}
+          <div className="mt-4 flex flex-wrap gap-2">
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => navigate("/patient/prescriptions")}
+              className="inline-flex items-center gap-2 px-3 py-2 bg-cyan-100 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-300 rounded-lg text-xs font-medium hover:bg-cyan-200 dark:hover:bg-cyan-900/50 transition-colors"
+            >
+              <Pill className="h-3 w-3" />
+              Voir médicaments
+            </motion.button>
+
+            {nextAppointmentData?.appointment && (
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => navigate("/booking")}
+                className="inline-flex items-center gap-2 px-3 py-2 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 rounded-lg text-xs font-medium hover:bg-emerald-200 dark:hover:bg-emerald-900/50 transition-colors"
+              >
+                <CalendarDays className="h-3 w-3" />
+                Mon RDV
+              </motion.button>
+            )}
+
+            {notificationsData?.count > 0 && (
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => navigate("/notifications")}
+                className="inline-flex items-center gap-2 px-3 py-2 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 rounded-lg text-xs font-medium hover:bg-amber-200 dark:hover:bg-amber-900/50 transition-colors"
+              >
+                <AlertCircle className="h-3 w-3" />
+                Notifications ({notificationsData.count})
+              </motion.button>
+            )}
+          </div>
+        </div>
+      </motion.div>
 
       {/* === Statistiques principales === */}
       <div className="grid md:grid-cols-3 gap-4">
@@ -256,19 +542,37 @@ export default function PatientDashboard() {
               </div>
             </>
           ) : (
-            <div className="mt-2 flex items-start gap-2 text-slate-400">
-              <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
-              <span className="text-sm">
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mt-4 text-center py-6"
+            >
+              <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-3">
+                <CalendarDays className="h-8 w-8 text-slate-400" />
+              </div>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mb-3">
                 Aucun rendez-vous prévu pour le moment
-              </span>
-            </div>
+              </p>
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => navigate("/search")}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-linear-to-r from-cyan-500 to-teal-500 text-white rounded-lg text-sm font-medium hover:from-cyan-600 hover:to-teal-600 transition-all duration-200 shadow-sm"
+              >
+                <Stethoscope className="h-4 w-4" />
+                Prendre RDV maintenant
+              </motion.button>
+            </motion.div>
           )}
-          <button
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
             onClick={handleAppointmentsClick}
-            className="btn-secondary mt-3 w-full"
+            className="mt-3 w-full inline-flex items-center justify-center gap-2 px-4 py-2 bg-linear-to-r from-cyan-500 to-teal-500 text-white rounded-lg text-sm font-medium hover:from-cyan-600 hover:to-teal-600 transition-all duration-200 shadow-sm"
           >
+            <CalendarDays className="h-4 w-4" />
             Voir mes rendez-vous
-          </button>
+          </motion.button>
         </div>
 
         {/* 💊 Médicaments du jour */}
@@ -283,42 +587,127 @@ export default function PatientDashboard() {
               <span className="text-sm">Chargement...</span>
             </div>
           ) : medicationsData?.items && medicationsData.items.length > 0 ? (
-            <ul className="mt-2 text-sm space-y-1">
-              {medicationsData.items.map((med, idx) => (
-                <li key={idx} className="flex items-start gap-2">
-                  <span className="text-cyan-500 mt-1">•</span>
-                  <span>
-                    {med.name} {med.dosage}
-                    {med.times && med.times.length > 0 && (
-                      <span className="text-slate-500 ml-1">
-                        — {med.times.join(", ")}
-                      </span>
-                    )}
+            <div className="mt-3 space-y-3">
+              {medicationsData.items.slice(0, 3).map((med, idx) => {
+                const now = new Date();
+                const currentHour = now.getHours();
+                const nextDoseTime =
+                  med.times?.find((time) => {
+                    const [hours] = time.split(":").map(Number);
+                    return hours > currentHour;
+                  }) || med.times?.[0];
+
+                const isUrgent =
+                  nextDoseTime &&
+                  (() => {
+                    const [hours] = nextDoseTime.split(":").map(Number);
+                    const timeDiff = hours - currentHour;
+                    return timeDiff >= 0 && timeDiff <= 2; // Urgent si dans les 2 prochaines heures
+                  })();
+
+                return (
+                  <motion.div
+                    key={idx}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: idx * 0.1 }}
+                    className={`flex items-start gap-3 p-3 rounded-lg border ${
+                      isUrgent
+                        ? "bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800"
+                        : "bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700"
+                    }`}
+                  >
+                    <div
+                      className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
+                        isUrgent
+                          ? "bg-red-500 text-white"
+                          : "bg-cyan-500 text-white"
+                      }`}
+                    >
+                      {isUrgent ? (
+                        <AlertCircle className="h-4 w-4" />
+                      ) : (
+                        <Pill className="h-4 w-4" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-sm text-slate-900 dark:text-slate-100 truncate">
+                          {med.name}
+                        </span>
+                        {isUrgent && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300 text-xs font-medium rounded-full">
+                            <Clock className="h-3 w-3" />
+                            Urgent
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-xs text-slate-600 dark:text-slate-400 mt-1">
+                        {med.dosage}
+                        {nextDoseTime && (
+                          <span className="ml-2 text-slate-500">
+                            • Prochaine: {nextDoseTime}
+                          </span>
+                        )}
+                      </div>
+                      {med.times && med.times.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          {med.times.map((time, timeIdx) => (
+                            <span
+                              key={timeIdx}
+                              className="inline-flex items-center gap-1 px-2 py-0.5 bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs rounded border"
+                            >
+                              <Clock className="h-3 w-3" />
+                              {time}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </motion.div>
+                );
+              })}
+              {medicationsData.items.length > 3 && (
+                <div className="text-center pt-2">
+                  <span className="text-xs text-slate-500">
+                    +{medicationsData.items.length - 3} autres médicaments
                   </span>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <div className="mt-2 flex items-start gap-2 text-slate-400">
-              <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
-              <span className="text-sm">
-                Aucun médicament à prendre aujourd'hui
-              </span>
+                </div>
+              )}
             </div>
+          ) : (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="mt-4 text-center py-4"
+            >
+              <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-2">
+                <Heart className="h-6 w-6 text-green-600 dark:text-green-400" />
+              </div>
+              <p className="text-sm text-green-700 dark:text-green-300 font-medium">
+                Aucun médicament à prendre aujourd'hui
+              </p>
+              <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                Profitez de votre journée !
+              </p>
+            </motion.div>
           )}
-          <button
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
             onClick={handlePrescriptionsClick}
-            className="btn-secondary mt-3 w-full"
+            className="mt-4 w-full inline-flex items-center justify-center gap-2 px-4 py-2 bg-linear-to-r from-cyan-500 to-teal-500 text-white rounded-lg text-sm font-medium hover:from-cyan-600 hover:to-teal-600 transition-all duration-200 shadow-sm"
           >
+            <Pill className="h-4 w-4" />
             Voir mes ordonnances
-          </button>
+          </motion.button>
         </div>
 
         {/* 🔔 Notifications */}
         <div className="card bg-white dark:bg-slate-900">
           <div className="text-sm text-slate-500 flex items-center gap-2">
             <AlertCircle className="h-4 w-4" />
-            Notifications
+            Notifications & Alertes
           </div>
           {loadingNotifications ? (
             <div className="mt-3 flex items-center gap-2 text-slate-400">
@@ -326,25 +715,82 @@ export default function PatientDashboard() {
               <span className="text-sm">Chargement...</span>
             </div>
           ) : notificationsData?.count > 0 ? (
-            <div className="mt-2 text-sm">
-              <span className="font-semibold text-cyan-600">
-                {notificationsData.count}
-              </span>{" "}
-              {notificationsData.count === 1
-                ? "nouveau message non lu"
-                : "nouveaux messages non lus"}
+            <div className="mt-3 space-y-3">
+              {/* Notification prioritaire - Résultats d'examens */}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg"
+              >
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center shrink-0">
+                    <ClipboardList className="h-4 w-4 text-white" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                        Résultats d'analyses disponibles
+                      </span>
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 text-xs font-medium rounded-full">
+                        <Clock className="h-3 w-3" />
+                        Nouveau
+                      </span>
+                    </div>
+                    <p className="text-xs text-blue-700 dark:text-blue-300">
+                      Vos résultats de prise de sang du 15 novembre sont prêts.
+                    </p>
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* Autres notifications */}
+              <div className="text-center py-2">
+                <div className="inline-flex items-center gap-2 px-3 py-1 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-xs rounded-full">
+                  <AlertCircle className="h-3 w-3" />
+                  {notificationsData.count} notification
+                  {notificationsData.count > 1 ? "s" : ""} active
+                  {notificationsData.count > 1 ? "s" : ""}
+                </div>
+              </div>
             </div>
           ) : (
-            <div className="mt-2 text-sm text-slate-400">
-              Aucune nouvelle notification
-            </div>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="mt-4 text-center py-6"
+            >
+              <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-2">
+                <svg
+                  className="h-6 w-6 text-green-600 dark:text-green-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+              </div>
+              <p className="text-sm text-green-700 dark:text-green-300 font-medium">
+                Aucune alerte active
+              </p>
+              <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                Tout est à jour !
+              </p>
+            </motion.div>
           )}
-          <button
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
             onClick={handleNotificationsClick}
-            className="btn-secondary mt-3 w-full"
+            className="mt-4 w-full inline-flex items-center justify-center gap-2 px-4 py-2 bg-linear-to-r from-orange-500 to-red-500 text-white rounded-lg text-sm font-medium hover:from-orange-600 hover:to-red-600 transition-all duration-200 shadow-sm"
           >
-            Ouvrir
-          </button>
+            <AlertCircle className="h-4 w-4" />
+            Voir toutes les notifications
+          </motion.button>
         </div>
       </div>
 
@@ -389,45 +835,427 @@ export default function PatientDashboard() {
         )}
       </div>
 
+      {/* === Historique des consultations récentes === */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+        className="mt-10"
+      >
+        <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-linear-to-r from-indigo-500 to-purple-500 rounded-xl flex items-center justify-center">
+                <ClipboardList className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                  Consultations récentes
+                </h2>
+                <p className="text-sm text-slate-600 dark:text-slate-400">
+                  Vos dernières visites médicales
+                </p>
+              </div>
+            </div>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => navigate("/patient/history")}
+              className="text-sm text-indigo-600 dark:text-indigo-400 font-medium hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors"
+            >
+              Voir tout →
+            </motion.button>
+          </div>
+
+          {/* Placeholder pour l'historique - à connecter avec les vraies données */}
+          <div className="space-y-3">
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.3 }}
+              className="flex items-center gap-4 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800/70 transition-colors cursor-pointer"
+              onClick={() => navigate("/patient/consultation/1")}
+            >
+              <div className="w-12 h-12 bg-linear-to-r from-emerald-500 to-teal-500 rounded-xl flex items-center justify-center shrink-0">
+                <Stethoscope className="h-6 w-6 text-white" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="font-medium text-slate-900 dark:text-slate-100">
+                    Dr. Marie Dubois
+                  </span>
+                  <span className="text-xs text-slate-500 dark:text-slate-400">
+                    Cardiologie
+                  </span>
+                </div>
+                <div className="text-sm text-slate-600 dark:text-slate-400">
+                  Consultation de suivi • 15 novembre 2024
+                </div>
+                <div className="flex items-center gap-4 mt-2 text-xs text-slate-500 dark:text-slate-400">
+                  <span className="flex items-center gap-1">
+                    <Clock className="h-3 w-3" />
+                    14h30
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <svg
+                      className="h-3 w-3"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                    Terminée
+                  </span>
+                </div>
+              </div>
+              <div className="shrink-0">
+                <svg
+                  className="h-5 w-5 text-slate-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 5l7 7-7 7"
+                  />
+                </svg>
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.4 }}
+              className="flex items-center gap-4 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800/70 transition-colors cursor-pointer"
+              onClick={() => navigate("/patient/consultation/2")}
+            >
+              <div className="w-12 h-12 bg-linear-to-r from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center shrink-0">
+                <Heart className="h-6 w-6 text-white" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="font-medium text-slate-900 dark:text-slate-100">
+                    Dr. Jean Martin
+                  </span>
+                  <span className="text-xs text-slate-500 dark:text-slate-400">
+                    Médecine générale
+                  </span>
+                </div>
+                <div className="text-sm text-slate-600 dark:text-slate-400">
+                  Visite de routine • 8 novembre 2024
+                </div>
+                <div className="flex items-center gap-4 mt-2 text-xs text-slate-500 dark:text-slate-400">
+                  <span className="flex items-center gap-1">
+                    <Clock className="h-3 w-3" />
+                    10h15
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <svg
+                      className="h-3 w-3"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                    Terminée
+                  </span>
+                </div>
+              </div>
+              <div className="shrink-0">
+                <svg
+                  className="h-5 w-5 text-slate-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 5l7 7-7 7"
+                  />
+                </svg>
+              </div>
+            </motion.div>
+          </div>
+
+          <div className="mt-4 text-center">
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => navigate("/patient/history")}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg text-sm font-medium hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+            >
+              <ClipboardList className="h-4 w-4" />
+              Voir l'historique complet
+            </motion.button>
+          </div>
+        </div>
+      </motion.div>
+
       {/* === Profil Médical === */}
       <div className="mt-10">
         <PatientMedicalProfile />
       </div>
 
-      {/* === Raccourcis rapides === */}
+      {/* === Raccourcis rapides intelligents === */}
       <div className="mt-10">
-        <h2 className="text-lg font-semibold mb-4 text-slate-800 dark:text-slate-100">
-          Actions rapides
-        </h2>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {shortcuts.map((item, i) => (
-            <motion.div
-              key={i}
-              whileHover={{ scale: 1.03 }}
-              transition={{ duration: 0.2 }}
-              className={`card border-t-4 bg-white dark:bg-slate-900 border-gradient-to-r ${item.color}`}
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-100">
+            Actions recommandées
+          </h2>
+          <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
+            <svg
+              className="h-3 w-3"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
             >
-              <div className="flex items-start gap-3">
-                <div className="p-3 bg-cyan-50 dark:bg-slate-800 rounded-xl">
-                  {item.icon}
-                </div>
-                <div>
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M13 10V3L4 14h7v7l9-11h-7z"
+              />
+            </svg>
+            Personnalisé
+          </div>
+        </div>
+
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {/* Téléconsultation - Priorité si médicaments actifs */}
+          <motion.div
+            whileHover={{ scale: 1.03 }}
+            transition={{ duration: 0.2 }}
+            className={`card border-t-4 bg-white dark:bg-slate-900 cursor-pointer ${
+              medicationsData?.items && medicationsData.items.length > 0
+                ? "border-t-blue-500 shadow-blue-100 dark:shadow-blue-900/20"
+                : "border-t-blue-400"
+            }`}
+            onClick={() => navigate("/teleconsult")}
+          >
+            <div className="flex items-start gap-3">
+              <div className="p-3 bg-blue-50 dark:bg-slate-800 rounded-xl relative">
+                <Video className="h-5 w-5 text-blue-500" />
+                {medicationsData?.items && medicationsData.items.length > 0 && (
+                  <div className="absolute -top-1 -right-1 w-3 h-3 bg-blue-500 rounded-full border-2 border-white dark:border-slate-900"></div>
+                )}
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
                   <h3 className="font-semibold text-slate-800 dark:text-slate-100">
-                    {item.title}
+                    Téléconsultation
                   </h3>
-                  <p className="text-sm text-slate-500 dark:text-slate-400">
-                    {item.description}
-                  </p>
-                  <Link
-                    to={item.link}
-                    className="text-cyan-600 text-sm font-medium hover:underline mt-2 inline-block"
-                  >
-                    Ouvrir →
-                  </Link>
+                  {medicationsData?.items &&
+                    medicationsData.items.length > 0 && (
+                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs font-medium rounded">
+                        Recommandé
+                      </span>
+                    )}
+                </div>
+                <p className="text-sm text-slate-500 dark:text-slate-400">
+                  {medicationsData?.items && medicationsData.items.length > 0
+                    ? "Parfait pour suivre votre traitement"
+                    : "Consultez un médecin en ligne en direct."}
+                </p>
+                <div className="text-cyan-600 text-sm font-medium hover:underline mt-2 inline-block">
+                  Commencer →
                 </div>
               </div>
-            </motion.div>
-          ))}
+            </div>
+          </motion.div>
+
+          {/* Triage IA - Priorité si symptômes ou première visite */}
+          <motion.div
+            whileHover={{ scale: 1.03 }}
+            transition={{ duration: 0.2 }}
+            className="card border-t-4 border-t-emerald-400 bg-white dark:bg-slate-900 cursor-pointer"
+            onClick={() => navigate("/triage")}
+          >
+            <div className="flex items-start gap-3">
+              <div className="p-3 bg-emerald-50 dark:bg-slate-800 rounded-xl">
+                <Stethoscope className="h-5 w-5 text-emerald-500" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-slate-800 dark:text-slate-100 mb-1">
+                  Triage IA
+                </h3>
+                <p className="text-sm text-slate-500 dark:text-slate-400">
+                  Analysez vos symptômes via notre assistant IA pour une
+                  orientation rapide.
+                </p>
+                <div className="text-cyan-600 text-sm font-medium hover:underline mt-2 inline-block">
+                  Commencer →
+                </div>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Mes ordonnances - Priorité si médicaments actifs */}
+          <motion.div
+            whileHover={{ scale: 1.03 }}
+            transition={{ duration: 0.2 }}
+            className={`card border-t-4 bg-white dark:bg-slate-900 cursor-pointer ${
+              medicationsData?.items && medicationsData.items.length > 0
+                ? "border-t-cyan-500 shadow-cyan-100 dark:shadow-cyan-900/20"
+                : "border-t-cyan-400"
+            }`}
+            onClick={() => navigate("/patient/prescriptions")}
+          >
+            <div className="flex items-start gap-3">
+              <div className="p-3 bg-cyan-50 dark:bg-slate-800 rounded-xl relative">
+                <ClipboardList className="h-5 w-5 text-cyan-500" />
+                {medicationsData?.items && medicationsData.items.length > 0 && (
+                  <div className="absolute -top-1 -right-1 w-3 h-3 bg-cyan-500 rounded-full border-2 border-white dark:border-slate-900"></div>
+                )}
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <h3 className="font-semibold text-slate-800 dark:text-slate-100">
+                    Mes ordonnances
+                  </h3>
+                  {medicationsData?.items &&
+                    medicationsData.items.length > 0 && (
+                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-cyan-100 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-300 text-xs font-medium rounded">
+                        {medicationsData.items.length} actif
+                        {medicationsData.items.length > 1 ? "s" : ""}
+                      </span>
+                    )}
+                </div>
+                <p className="text-sm text-slate-500 dark:text-slate-400">
+                  {medicationsData?.items && medicationsData.items.length > 0
+                    ? "Suivez vos traitements en cours"
+                    : "Accédez à vos prescriptions et traitements."}
+                </p>
+                <div className="text-cyan-600 text-sm font-medium hover:underline mt-2 inline-block">
+                  Voir →
+                </div>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Rendez-vous - Priorité si RDV proche */}
+          <motion.div
+            whileHover={{ scale: 1.03 }}
+            transition={{ duration: 0.2 }}
+            className={`card border-t-4 bg-white dark:bg-slate-900 cursor-pointer ${
+              nextAppointmentData?.appointment
+                ? "border-t-green-500 shadow-green-100 dark:shadow-green-900/20"
+                : "border-t-green-400"
+            }`}
+            onClick={() => navigate("/booking")}
+          >
+            <div className="flex items-start gap-3">
+              <div className="p-3 bg-green-50 dark:bg-slate-800 rounded-xl relative">
+                <CalendarDays className="h-5 w-5 text-green-500" />
+                {nextAppointmentData?.appointment && (
+                  <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white dark:border-slate-900"></div>
+                )}
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <h3 className="font-semibold text-slate-800 dark:text-slate-100">
+                    Mes rendez-vous
+                  </h3>
+                  {nextAppointmentData?.appointment && (
+                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-xs font-medium rounded">
+                      Prochain
+                    </span>
+                  )}
+                </div>
+                <p className="text-sm text-slate-500 dark:text-slate-400">
+                  {nextAppointmentData?.appointment
+                    ? `Prochain RDV: ${new Date(
+                        nextAppointmentData.appointment.scheduled_at
+                      ).toLocaleDateString("fr-FR", {
+                        month: "short",
+                        day: "numeric",
+                      })}`
+                    : "Gérez vos rendez-vous médicaux."}
+                </p>
+                <div className="text-cyan-600 text-sm font-medium hover:underline mt-2 inline-block">
+                  Gérer →
+                </div>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Profil médical - Toujours disponible */}
+          <motion.div
+            whileHover={{ scale: 1.03 }}
+            transition={{ duration: 0.2 }}
+            className="card border-t-4 border-t-purple-400 bg-white dark:bg-slate-900 cursor-pointer"
+            onClick={() => navigate("/patient/dashboard")}
+          >
+            <div className="flex items-start gap-3">
+              <div className="p-3 bg-purple-50 dark:bg-slate-800 rounded-xl">
+                <Heart className="h-5 w-5 text-purple-500" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-slate-800 dark:text-slate-100 mb-1">
+                  Mon profil médical
+                </h3>
+                <p className="text-sm text-slate-500 dark:text-slate-400">
+                  Gérez vos informations médicales et votre dossier de santé.
+                </p>
+                <div className="text-cyan-600 text-sm font-medium hover:underline mt-2 inline-block">
+                  Consulter →
+                </div>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Résultats - Priorité si notifications de résultats */}
+          <motion.div
+            whileHover={{ scale: 1.03 }}
+            transition={{ duration: 0.2 }}
+            className="card border-t-4 border-t-amber-400 bg-white dark:bg-slate-900 cursor-pointer"
+            onClick={() => navigate("/patient/results")}
+          >
+            <div className="flex items-start gap-3">
+              <div className="p-3 bg-amber-50 dark:bg-slate-800 rounded-xl">
+                <svg
+                  className="h-5 w-5 text-amber-500"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                  />
+                </svg>
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-slate-800 dark:text-slate-100 mb-1">
+                  Mes résultats
+                </h3>
+                <p className="text-sm text-slate-500 dark:text-slate-400">
+                  Consultez vos analyses et examens médicaux.
+                </p>
+                <div className="text-cyan-600 text-sm font-medium hover:underline mt-2 inline-block">
+                  Voir →
+                </div>
+              </div>
+            </div>
+          </motion.div>
         </div>
       </div>
     </section>
