@@ -1,40 +1,132 @@
 // src/pages/pro/Calendar.jsx
+import { CalendarDays } from "lucide-react";
 import { useAppointments } from "../../hooks/useAppointments.js";
 import ProLayout from "../../layouts/ProLayout.jsx";
 
 export default function Calendar() {
-    const { data, isLoading } = useAppointments({ role: "doctor" });
+  const { data, isLoading, refetch } = useAppointments({ role: "doctor" });
 
-    return (
-        <ProLayout title="Calendrier des rendez-vous">
-            {isLoading ? (
-                <div className="card grid place-items-center py-16">Chargement…</div>
-            ) : (
-                <div className="card overflow-x-auto">
-                    <table className="min-w-full text-sm">
-                        <thead>
-                            <tr className="border-b text-left">
-                                <th>Date</th>
-                                <th>Heure</th>
-                                <th>Patient</th>
-                                <th>Mode</th>
-                                <th>Statut</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {data.items.map((a) => (
-                                <tr key={a.id} className="border-b last:border-none">
-                                    <td>{a.date}</td>
-                                    <td>{a.time}</td>
-                                    <td>{a.patient}</td>
-                                    <td>{a.mode}</td>
-                                    <td>{a.status}</td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            )}
-        </ProLayout>
-    );
+  // Fonction pour formater la date et l'heure
+  const formatDateTime = (scheduledAt) => {
+    const date = new Date(scheduledAt);
+    return {
+      date: date.toLocaleDateString("fr-FR"),
+      time: date.toLocaleTimeString("fr-FR", {
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+    };
+  };
+
+  // Fonction pour traduire le statut
+  const getStatusLabel = (status) => {
+    const statusMap = {
+      pending: "En attente",
+      confirmed: "Confirmé",
+      cancelled: "Annulé",
+      completed: "Terminé",
+    };
+    return statusMap[status] || status;
+  };
+
+  return (
+    <ProLayout title="Calendrier des rendez-vous">
+      <div className="mb-4 flex justify-between items-center">
+        <p className="text-sm text-slate-600 dark:text-slate-400">
+          Rendez-vous mis à jour automatiquement toutes les 30 secondes
+        </p>
+        <button
+          onClick={() => refetch()}
+          className="btn-secondary text-xs"
+          disabled={isLoading}
+        >
+          {isLoading ? "Actualisation..." : "Actualiser"}
+        </button>
+      </div>
+
+      {isLoading ? (
+        <div className="card grid place-items-center py-16">
+          <div className="flex items-center gap-2">
+            <div className="animate-spin h-4 w-4 rounded-full border-2 border-cyan-500 border-t-transparent"></div>
+            <span>Chargement des rendez-vous...</span>
+          </div>
+        </div>
+      ) : (
+        <div className="card overflow-x-auto">
+          {data?.items?.length > 0 ? (
+            <table className="min-w-full text-sm">
+              <thead>
+                <tr className="border-b text-left">
+                  <th className="px-4 py-2">Date</th>
+                  <th className="px-4 py-2">Heure</th>
+                  <th className="px-4 py-2">Patient</th>
+                  <th className="px-4 py-2">Motif</th>
+                  <th className="px-4 py-2">Statut</th>
+                  <th className="px-4 py-2">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.items.map((appointment) => {
+                  const { date, time } = formatDateTime(
+                    appointment.scheduled_at
+                  );
+                  return (
+                    <tr
+                      key={appointment.id}
+                      className="border-b last:border-none hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                    >
+                      <td className="px-4 py-3">{date}</td>
+                      <td className="px-4 py-3">{time}</td>
+                      <td className="px-4 py-3">
+                        {/* TODO: Afficher le nom du patient depuis patient_id */}
+                        Patient #{appointment.patient_id}
+                      </td>
+                      <td className="px-4 py-3">
+                        {appointment.reason || "Non spécifié"}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span
+                          className={`px-2 py-1 rounded-full text-xs ${
+                            appointment.status === "confirmed"
+                              ? "bg-green-100 text-green-800"
+                              : appointment.status === "pending"
+                              ? "bg-yellow-100 text-yellow-800"
+                              : appointment.status === "cancelled"
+                              ? "bg-red-100 text-red-800"
+                              : "bg-gray-100 text-gray-800"
+                          }`}
+                        >
+                          {getStatusLabel(appointment.status)}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex gap-2">
+                          {appointment.status === "pending" && (
+                            <button className="text-xs bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded">
+                              Confirmer
+                            </button>
+                          )}
+                          <button className="text-xs bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded">
+                            Détails
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          ) : (
+            <div className="text-center py-16 text-slate-500">
+              <CalendarDays size={48} className="mx-auto mb-4 opacity-50" />
+              <p>Aucun rendez-vous trouvé</p>
+              <p className="text-sm mt-2">
+                Les rendez-vous apparaîtront ici automatiquement
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+    </ProLayout>
+  );
 }

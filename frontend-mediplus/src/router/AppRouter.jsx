@@ -3,11 +3,11 @@ import Navbar from "../components/Navbar.jsx"; // ✅ ajouté
 
 // 🩺 Pages Patient
 import PatientDashboard from "../pages/patient/Dashboard.jsx";
-import DashboardContainer from "../pages/patient/DashboardContainer.jsx";
 import PatientHome from "../pages/patient/Home.jsx";
 import Profile from "../pages/patient/Profile.jsx";
 
 // 👨‍⚕️ Professionnel
+import Availabilities from "../pages/pro/Availabilities.jsx";
 import Billing from "../pages/pro/Billing.jsx";
 import ProCalendar from "../pages/pro/Calendar.jsx";
 import ProDashboard from "../pages/pro/Dashboard.jsx";
@@ -15,6 +15,7 @@ import ProPatients from "../pages/pro/Patients.jsx";
 import ProPrescriptions from "../pages/pro/Prescriptions.jsx";
 import PrescriptionsEditor from "../pages/pro/PrescriptionsEditor.jsx";
 import ProProfile from "../pages/pro/Profile.jsx";
+import Profilpro from "../pages/pro/Profilpro.jsx";
 import ProSettings from "../pages/pro/Settings.jsx";
 import ProTeleconsult from "../pages/pro/Teleconsult.jsx";
 
@@ -69,8 +70,6 @@ export default function AppRouter() {
         <Route path="/triage" element={<Triage />} />
         <Route path="/doctor/:id" element={<Doctor />} />
         <Route path="/patient/profile" element={<Profile />} />
-        <Route path="/patient/dashboard" element={<DashboardContainer />} />
-
         <Route
           path="/patient/dashboard"
           element={
@@ -94,6 +93,14 @@ export default function AppRouter() {
           element={
             <ProtectedRoute roles={["doctor", "nurse", "pro"]}>
               <ProCalendar />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/pro/availabilities"
+          element={
+            <ProtectedRoute roles={["doctor", "nurse", "pro"]}>
+              <Availabilities />
             </ProtectedRoute>
           }
         />
@@ -142,6 +149,14 @@ export default function AppRouter() {
           element={
             <ProtectedRoute roles={["doctor", "nurse", "pro"]}>
               <ProProfile />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/pro/profilpro"
+          element={
+            <ProtectedRoute roles={["doctor", "nurse", "pro"]}>
+              <Profilpro />
             </ProtectedRoute>
           }
         />

@@ -81,9 +81,36 @@ export default function Appointments() {
   ).length;
 
   const handleCancel = (id) => {
-    if (window.confirm("Êtes-vous sûr de vouloir annuler ce rendez-vous ?")) {
-      cancelMutation.mutate(id);
-    }
+    toast(
+      (t) => (
+        <div className="flex flex-col gap-3">
+          <p className="text-sm font-medium">
+            Êtes-vous sûr de vouloir annuler ce rendez-vous ?
+          </p>
+          <div className="flex gap-2 justify-end">
+            <button
+              onClick={() => {
+                toast.dismiss(t.id);
+                cancelMutation.mutate(id);
+              }}
+              className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs font-medium transition-colors"
+            >
+              Annuler
+            </button>
+            <button
+              onClick={() => toast.dismiss(t.id)}
+              className="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded text-xs font-medium transition-colors"
+            >
+              Conserver
+            </button>
+          </div>
+        </div>
+      ),
+      {
+        duration: Infinity,
+        position: "top-center",
+      }
+    );
   };
 
   return (

@@ -203,6 +203,12 @@ function getGroupsBySection(section) {
             icon: <CalendarDays size={18} />,
           },
           {
+            key: "availabilities",
+            to: "/pro/availabilities",
+            label: "Disponibilités",
+            icon: <CalendarDays size={18} />,
+          },
+          {
             key: "patients",
             to: "/pro/patients",
             label: "Mes patients",

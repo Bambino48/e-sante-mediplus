@@ -43,3 +43,68 @@ export const getDoctorAvailabilities = async (doctorId, params = {}) => {
   });
   return data;
 };
+
+/**
+ * 🧩 Mise à jour du profil professionnel du docteur
+ * @param {Object} payload - Données du profil professionnel à mettre à jour
+ * @returns {Promise<Object>} Profil mis à jour
+ */
+export const updateDoctorProfile = async (payload) => {
+  const token = localStorage.getItem("token");
+  if (!token) throw new Error("Token non trouvé");
+
+  console.log("🔄 API updateDoctorProfile - Payload envoyé:", payload);
+  console.log("🔄 API updateDoctorProfile - Type de payload:", typeof payload);
+  console.log(
+    "🔄 API updateDoctorProfile - Clés du payload:",
+    Object.keys(payload)
+  );
+
+  try {
+    const { data } = await api.put("/doctor/profile", payload, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    console.log("✅ API updateDoctorProfile - Réponse réussie:", data);
+    return data;
+  } catch (error) {
+    console.error("❌ API updateDoctorProfile - Erreur complète:", error);
+    console.error(
+      "❌ API updateDoctorProfile - Response data:",
+      error.response?.data
+    );
+    console.error(
+      "❌ API updateDoctorProfile - Response status:",
+      error.response?.status
+    );
+
+    // Afficher les erreurs de validation détaillées
+    if (error.response?.data?.errors) {
+      console.error(
+        "❌ API updateDoctorProfile - Erreurs de validation:",
+        error.response.data.errors
+      );
+      // Afficher chaque erreur individuellement
+      Object.entries(error.response.data.errors).forEach(
+        ([field, messages]) => {
+          console.error(`❌ ${field}:`, messages);
+        }
+      );
+    }
+
+    throw error;
+  }
+};
+
+/**
+ * 🧩 Récupération du profil professionnel du docteur connecté
+ * @returns {Promise<Object>} Profil professionnel du docteur
+ */
+export const getDoctorProfile = async () => {
+  const token = localStorage.getItem("token");
+  if (!token) throw new Error("Token non trouvé");
+
+  const { data } = await api.get("/doctor/profile", {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return data;
+};

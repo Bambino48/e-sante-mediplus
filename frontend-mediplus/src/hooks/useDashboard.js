@@ -1,6 +1,9 @@
 // src/hooks/useDashboard.js
 import { useQuery } from "@tanstack/react-query";
-import { getNextAppointment } from "../api/appointments.js";
+import {
+  getNextAppointment,
+  getRecentConsultations,
+} from "../api/appointments.js";
 import { getUnreadNotifications } from "../api/notifications.js";
 import { getTodayMedications } from "../api/prescriptions.js";
 
@@ -26,6 +29,17 @@ export function useTodayMedications() {
   return useQuery({
     queryKey: ["todayMedications"],
     queryFn: getTodayMedications,
+    enabled: isAuthenticated(), // ✅ Désactivé si non authentifié
+    retry: 1,
+    refetchInterval: 10 * 60 * 1000, // Rafraîchissement toutes les 10 minutes
+  });
+}
+
+// ✅ Hook pour les consultations récentes
+export function useRecentConsultations() {
+  return useQuery({
+    queryKey: ["recentConsultations"],
+    queryFn: getRecentConsultations,
     enabled: isAuthenticated(), // ✅ Désactivé si non authentifié
     retry: 1,
     refetchInterval: 10 * 60 * 1000, // Rafraîchissement toutes les 10 minutes
