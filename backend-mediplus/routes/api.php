@@ -48,12 +48,18 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/doctor/profile', [DoctorController::class, 'myProfile']);
     Route::post('/doctor/profile', [DoctorController::class, 'storeProfile']);
     Route::put('/doctor/profile', [DoctorController::class, 'updateProfile']);
+    Route::get('/doctor/stats', [DoctorController::class, 'stats']);
 
     // =======================================================
     // Phase 3 — Système de Rendez-vous et Disponibilités
     // =======================================================
-    Route::get('/pro/availability', [AvailabilityController::class, 'index']);
-    Route::post('/pro/availability', [AvailabilityController::class, 'store']);
+    Route::get('/doctor/availabilities', [AvailabilityController::class, 'index']);
+    Route::post('/doctor/availabilities', [AvailabilityController::class, 'store']);
+    Route::put('/doctor/availabilities/{id}', [AvailabilityController::class, 'update']);
+    Route::delete('/doctor/availabilities/{id}', [AvailabilityController::class, 'destroy']);
+
+    Route::get('/pro/appointments', [AppointmentController::class, 'doctorAppointments']);
+    Route::get('/doctor/appointments/today', [AppointmentController::class, 'doctorAppointmentsToday']);
 
     Route::get('/patient/appointments', [AppointmentController::class, 'index']);
     Route::get('/patient/appointments/next', [AppointmentController::class, 'next']);
@@ -133,4 +139,3 @@ Route::middleware('auth:sanctum')->group(function () {
 Route::get('/doctors', [DoctorController::class, 'index']);
 Route::get('/search', [DoctorController::class, 'search']);
 Route::get('/doctor/{id}', [DoctorController::class, 'show']);
-Route::get('/specialties', [DoctorController::class, 'specialties']);

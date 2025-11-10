@@ -34,8 +34,7 @@ class DoctorController extends Controller
 
         $query = User::where('role', 'doctor')
             ->with([
-                'doctorProfile',
-                'specialties:id,name'
+                'doctorProfile'
             ])
             ->select([
                 'users.id',
@@ -57,14 +56,6 @@ class DoctorController extends Controller
         if ($city) {
             $query->whereHas('doctorProfile', function ($q) use ($city) {
                 $q->where('city', 'like', "%{$city}%");
-            });
-        }
-
-        if ($specialty) {
-            $query->whereHas('specialties', function ($q) use ($specialty) {
-                $q->where('name', 'like', "%{$specialty}%");
-            })->orWhereHas('doctorProfile', function ($q) use ($specialty) {
-                $q->where('primary_specialty', 'like', "%{$specialty}%");
             });
         }
 
@@ -105,10 +96,11 @@ class DoctorController extends Controller
                     'fees' => $profile->fees,
                     'rating' => $profile->rating,
                     'primary_specialty' => $profile->primary_specialty,
+                    'specialty' => $profile->specialty,
+                    'professional_document' => $profile->professional_document,
                     'phone' => $profile->phone,
-                    'availability' => $profile->availability,
                 ] : null,
-                'specialties' => $doctor->specialties->pluck('name')->toArray(),
+                'specialties' => $profile ? [$profile->specialty] : [],
                 'member_since' => $doctor->created_at->format('Y-m-d'),
                 'has_complete_profile' => (bool) $profile,
             ];
@@ -149,7 +141,7 @@ class DoctorController extends Controller
 
         $doctors = User::query()
             ->where('role', 'doctor')
-            ->with(['doctorProfile', 'specialties'])
+            ->with(['doctorProfile'])
             ->when($q, function ($qry) use ($q) {
                 $qry->where('name', 'like', "%$q%")
                     ->orWhereHas('doctorProfile', function ($qq) use ($q) {
@@ -159,9 +151,8 @@ class DoctorController extends Controller
             })
             ->when($specialty, function ($qry) use ($specialty) {
                 $qry->whereHas('doctorProfile', function ($qq) use ($specialty) {
-                    $qq->where('primary_specialty', 'like', "%$specialty%");
-                })->orWhereHas('specialties', function ($qq) use ($specialty) {
-                    $qq->where('name', 'like', "%$specialty%");
+                    $qq->where('primary_specialty', 'like', "%$specialty%")
+                        ->orWhere('specialty', 'like', "%$specialty%");
                 });
             })
             ->when($city, function ($qry) use ($city) {
@@ -179,17 +170,10 @@ class DoctorController extends Controller
     public function show($id)
     {
         $doctor = User::where('role', 'doctor')
-            ->with(['doctorProfile', 'specialties'])
+            ->with(['doctorProfile'])
             ->findOrFail($id);
 
         return response()->json(['doctor' => $doctor]);
-    }
-
-    // GET /api/specialties
-    public function specialties()
-    {
-        $list = Specialty::orderBy('name')->pluck('name')->values();
-        return response()->json(['specialties' => $list]);
     }
 
     // POST /api/doctor/profile (doctor connecté)
@@ -202,16 +186,24 @@ class DoctorController extends Controller
             return response()->json(['message' => 'Profil déjà existant'], 400);
         }
 
-        $data = $request->validate([
-            'city' => 'nullable|string|max:100',
-            'address' => 'nullable|string|max:255',
-            'phone' => 'nullable|string|max:30',
-            'fees' => 'nullable|integer|min:0',
-            'bio' => 'nullable|string|max:4000',
-            'availability' => 'nullable|array',
-            'primary_specialty' => 'nullable|string|max:120',
-            'specialties' => 'array', // ex: ["Cardiologie","Dermatologie"]
-        ]);
+        try {
+            $data = $request->validate([
+                'city' => 'nullable|string|max:100',
+                'address' => 'nullable|string|max:255',
+                'phone' => 'nullable|string|max:30',
+                'fees' => 'nullable|numeric|min:0',
+                'bio' => 'nullable|string|max:4000',
+                'primary_specialty' => 'nullable|string|max:120',
+                'specialty' => 'nullable|string|max:120',
+                'professional_document' => 'nullable|string|max:255',
+                'specialties' => 'nullable|array', // ex: ["Cardiologie","Dermatologie"]
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'message' => 'Données invalides',
+                'errors' => $e->errors()
+            ], 422);
+        }
 
         $profile = DoctorProfile::create([
             'user_id' => $user->id,
@@ -220,19 +212,10 @@ class DoctorController extends Controller
             'phone' => $data['phone'] ?? null,
             'fees' => $data['fees'] ?? 0,
             'bio' => $data['bio'] ?? null,
-            'availability' => $data['availability'] ?? null,
             'primary_specialty' => $data['primary_specialty'] ?? null,
+            'specialty' => $data['specialty'] ?? null,
+            'professional_document' => $data['professional_document'] ?? null,
         ]);
-
-        // sync specialties
-        if (!empty($data['specialties'])) {
-            $ids = [];
-            foreach ($data['specialties'] as $name) {
-                $spec = Specialty::firstOrCreate(['name' => $name]);
-                $ids[] = $spec->id;
-            }
-            $user->specialties()->sync($ids);
-        }
 
         return response()->json(['message' => 'Profil créé', 'doctor_profile' => $profile], 201);
     }
@@ -243,17 +226,25 @@ class DoctorController extends Controller
         $user = $request->user();
         if (!$user->isDoctor()) return response()->json(['message' => 'Accès refusé'], 403);
 
-        $data = $request->validate([
-            'city' => 'nullable|string|max:100',
-            'address' => 'nullable|string|max:255',
-            'phone' => 'nullable|string|max:30',
-            'fees' => 'nullable|integer|min:0',
-            'bio' => 'nullable|string|max:4000',
-            'availability' => 'nullable|array',
-            'primary_specialty' => 'nullable|string|max:120',
-            'rating' => 'nullable|numeric|min:0|max:5',
-            'specialties' => 'array',
-        ]);
+        try {
+            $data = $request->validate([
+                'city' => 'nullable|string|max:100',
+                'address' => 'nullable|string|max:255',
+                'phone' => 'nullable|string|max:30',
+                'fees' => 'nullable|numeric|min:0', // Changé integer vers numeric pour accepter floats
+                'bio' => 'nullable|string|max:4000',
+                'primary_specialty' => 'nullable|string|max:120',
+                'rating' => 'nullable|numeric|min:0|max:5',
+                'specialty' => 'nullable|string|max:120',
+                'professional_document' => 'nullable|string|max:255',
+                'specialties' => 'nullable|array',
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'message' => 'Données invalides',
+                'errors' => $e->errors()
+            ], 422);
+        }
 
         $profile = DoctorProfile::updateOrCreate(
             ['user_id' => $user->id],
@@ -263,20 +254,12 @@ class DoctorController extends Controller
                 'phone' => $data['phone'] ?? null,
                 'fees' => $data['fees'] ?? 0,
                 'bio' => $data['bio'] ?? null,
-                'availability' => $data['availability'] ?? null,
                 'primary_specialty' => $data['primary_specialty'] ?? null,
                 'rating' => $data['rating'] ?? 0,
+                'specialty' => $data['specialty'] ?? null,
+                'professional_document' => $data['professional_document'] ?? null,
             ]
         );
-
-        if (array_key_exists('specialties', $data)) {
-            $ids = [];
-            foreach ($data['specialties'] as $name) {
-                $spec = Specialty::firstOrCreate(['name' => $name]);
-                $ids[] = $spec->id;
-            }
-            $user->specialties()->sync($ids);
-        }
 
         return response()->json(['message' => 'Profil mis à jour', 'doctor_profile' => $profile]);
     }
@@ -288,14 +271,65 @@ class DoctorController extends Controller
         if (!$user->isDoctor()) return response()->json(['message' => 'Accès refusé'], 403);
 
         $profile = $user->doctorProfile;
-        if (!$profile) return response()->json(['message' => 'Aucun profil trouvé'], 404);
 
-        $user->load('specialties');
+        // Si pas de profil, retourner un profil vide au lieu d'une erreur 404
+        if (!$profile) {
+            return response()->json([
+                'doctor_profile' => null,
+                'has_profile' => false,
+                'message' => 'Profil non configuré'
+            ]);
+        }
+
         $profile->load('user');
 
         return response()->json([
             'doctor_profile' => $profile,
-            'specialties' => $user->specialties->pluck('name')->values(),
+            'has_profile' => true
+        ]);
+    }
+
+    // GET /api/doctor/stats (statistiques du dashboard)
+    public function stats(Request $request)
+    {
+        $user = $request->user();
+        if (!$user->isDoctor()) return response()->json(['message' => 'Accès refusé'], 403);
+
+        // Statistiques des rendez-vous
+        $totalAppointments = \App\Models\Appointment::where('doctor_id', $user->id)->count();
+        $todayAppointments = \App\Models\Appointment::where('doctor_id', $user->id)
+            ->whereDate('scheduled_at', today())
+            ->count();
+        $weekAppointments = \App\Models\Appointment::where('doctor_id', $user->id)
+            ->whereBetween('scheduled_at', [now()->startOfWeek(), now()->endOfWeek()])
+            ->count();
+
+        // Statistiques des patients (patients uniques)
+        $totalPatients = \App\Models\Appointment::where('doctor_id', $user->id)
+            ->distinct('patient_id')
+            ->count('patient_id');
+
+        // Rendez-vous aujourd'hui avec détails
+        $todayAppointmentsDetails = \App\Models\Appointment::where('doctor_id', $user->id)
+            ->whereDate('scheduled_at', today())
+            ->with('patient:id,name,email')
+            ->orderBy('scheduled_at')
+            ->get(['id', 'scheduled_at', 'status', 'patient_id']);
+
+        // Revenus (si il y a un système de paiement)
+        $totalRevenue = \App\Models\Payment::whereHas('appointment', function ($q) use ($user) {
+            $q->where('doctor_id', $user->id)->where('status', 'completed');
+        })->sum('amount') ?? 0;
+
+        return response()->json([
+            'stats' => [
+                'total_appointments' => $totalAppointments,
+                'today_appointments' => $todayAppointments,
+                'week_appointments' => $weekAppointments,
+                'total_patients' => $totalPatients,
+                'total_revenue' => $totalRevenue,
+            ],
+            'today_appointments_details' => $todayAppointmentsDetails,
         ]);
     }
 }

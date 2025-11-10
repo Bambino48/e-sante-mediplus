@@ -82,6 +82,41 @@ class AppointmentController extends Controller
         return response()->json(['message' => 'Rendez-vous confirmé', 'appointment' => $appointment]);
     }
 
+    // GET /api/pro/appointments
+    public function doctorAppointments(Request $request)
+    {
+        $user = $request->user();
+        if (!$user->isDoctor()) {
+            return response()->json(['message' => 'Accès refusé'], 403);
+        }
+
+        $appointments = Appointment::where('doctor_id', $user->id)
+            ->with('patient')
+            ->orderByDesc('scheduled_at')
+            ->get();
+
+        return response()->json(['appointments' => $appointments]);
+    }
+
+    // GET /api/doctor/appointments/today
+    public function doctorAppointmentsToday(Request $request)
+    {
+        $user = $request->user();
+        if (!$user->isDoctor()) {
+            return response()->json(['message' => 'Accès refusé'], 403);
+        }
+
+        $today = now()->toDateString();
+
+        $appointments = Appointment::where('doctor_id', $user->id)
+            ->whereDate('scheduled_at', $today)
+            ->with('patient')
+            ->orderBy('scheduled_at')
+            ->get();
+
+        return response()->json(['appointments' => $appointments]);
+    }
+
     // PUT /api/patient/appointments/{id}
     public function update(Request $request, $id)
     {

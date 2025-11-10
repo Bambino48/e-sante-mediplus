@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Models\User;
 
 class DoctorProfile extends Model
 {
@@ -13,13 +14,13 @@ class DoctorProfile extends Model
         'phone',
         'fees',
         'bio',
-        'availability',
         'rating',
         'primary_specialty',
+        'specialty',
+        'professional_document',
     ];
 
     protected $casts = [
-        'availability' => 'array',
         'rating' => 'float',
     ];
 

@@ -53,7 +53,6 @@ class ConfigurationTest extends TestCase
             'User',
             'DoctorProfile',
             'Appointment',
-            'Specialty',
             'Availability'
         ];
 

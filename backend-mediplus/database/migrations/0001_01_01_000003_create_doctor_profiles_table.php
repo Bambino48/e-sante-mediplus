@@ -25,19 +25,10 @@ return new class extends Migration {
 
             $table->timestamps();
         });
-
-        // Pivot multi-spécialités (optionnel mais prêt si tu en veux plusieurs)
-        Schema::create('doctor_specialty', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('doctor_id')->constrained('users')->onDelete('cascade'); // users.role=doctor
-            $table->foreignId('specialty_id')->constrained('specialties')->onDelete('cascade');
-            $table->unique(['doctor_id', 'specialty_id']);
-        });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('doctor_specialty');
         Schema::dropIfExists('doctor_profiles');
     }
 };

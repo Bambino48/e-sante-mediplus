@@ -32,7 +32,8 @@ class AdminController extends Controller
     // GET /api/admin/catalog
     public function catalog()
     {
-        return response()->json(['specialties' => Specialty::all()]);
+        // Specialties system has been removed - returning empty array for compatibility
+        return response()->json(['specialties' => []]);
     }
 
     // GET /api/admin/reports

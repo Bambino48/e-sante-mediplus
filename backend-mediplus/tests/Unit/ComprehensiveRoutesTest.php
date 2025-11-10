@@ -50,7 +50,7 @@ class ComprehensiveRoutesTest extends TestCase
     {
         $doctorRoutes = [
             '/doctor/profile' => 'Profil médecin',
-            '/pro/availability' => 'Disponibilités médecin',
+            '/doctor/availabilities' => 'Disponibilités médecin',
             '/pro/billing' => 'Facturation médecin'
         ];
 
@@ -70,8 +70,7 @@ class ComprehensiveRoutesTest extends TestCase
     {
         $patientRoutes = [
             '/patient/appointments' => 'Rendez-vous patient',
-            '/search' => 'Recherche de médecins',
-            '/specialties' => 'Spécialités médicales'
+            '/search' => 'Recherche de médecins'
         ];
 
         foreach ($patientRoutes as $route => $description) {

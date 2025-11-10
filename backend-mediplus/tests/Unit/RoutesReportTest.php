@@ -102,7 +102,9 @@ TOTAL DES ROUTES            : {$total}
             ],
             'MEDECINS' => [
                 '/doctor/profile' => 'POST/GET/PUT - Profil medecin',
-                '/pro/availability' => 'POST/GET/PUT/DELETE - Disponibilites',
+                '/doctor/availabilities' => 'GET/POST/PUT/DELETE - Disponibilites',
+                '/pro/appointments' => 'GET - Rendez-vous medecin',
+                '/doctor/appointments/today' => 'GET - Rendez-vous aujourd\'hui',
                 '/pro/billing' => 'GET - Facturation medecin'
             ],
             'PATIENTS' => [

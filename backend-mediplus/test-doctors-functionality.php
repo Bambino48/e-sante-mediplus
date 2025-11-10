@@ -72,7 +72,7 @@ foreach ($allowedSortFields as $field) {
 // Test 5: Vérification des relations Eloquent
 echo "\n5. Relations Eloquent...\n";
 echo "   ✓ Relation User -> DoctorProfile (hasOne)\n";
-echo "   ✓ Relation User -> Specialties (belongsToMany)\n";
+echo "   ✓ Champ specialty dans DoctorProfile\n";
 echo "   ✓ Eager loading optimisé\n";
 
 // Test 6: Optimisations de performance

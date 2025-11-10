@@ -47,11 +47,6 @@ class User extends Authenticatable
         return $this->hasOne(DoctorProfile::class, 'user_id', 'id');
     }
 
-    public function specialties()
-    {
-        return $this->belongsToMany(Specialty::class, 'doctor_specialty', 'doctor_id', 'specialty_id');
-    }
-
     public function availabilities()
     {
         return $this->hasMany(Availability::class, 'doctor_id');
