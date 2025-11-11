@@ -1,4 +1,6 @@
 // src/pages/pro/Availabilities.jsx
+// eslint-disable-next-line no-unused-vars
+import { motion } from "framer-motion";
 import { Calendar, Clock, Edit, Plus, Save, Trash2, X } from "lucide-react";
 import { useState } from "react";
 import toast from "react-hot-toast";

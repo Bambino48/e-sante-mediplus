@@ -75,7 +75,8 @@ export async function listPrescriptionsByPatient(patient_id) {
   return { items };
 }
 
-export async function listPrescriptionsByDoctor(doctor_id) {
+// eslint-disable-next-line no-unused-vars
+export async function listPrescriptionsByDoctor(_doctor_id) {
   // TODO: Replace with real API call when backend route is available
   // const { data } = await api.get(`/doctor/prescriptions`);
   // return data;
@@ -83,7 +84,6 @@ export async function listPrescriptionsByDoctor(doctor_id) {
   // For now, return empty array to avoid errors
   return { items: [] };
 }
-
 export async function markDoseTaken(medication_id) {
   const med = DB.medications.find((m) => m.id === medication_id);
   if (!med) throw new Error("Médicament introuvable");
