@@ -1,10 +1,17 @@
 /* eslint-disable no-unused-vars */
 import { motion } from "framer-motion";
 import {
+  Activity,
   AlertTriangle,
+  Bone,
+  Brain,
+  Eye,
+  Heart,
   MapPin,
   Search,
+  Star,
   Stethoscope,
+  User,
   Video,
 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -241,7 +248,11 @@ export default function PatientHome() {
           ) : doctors.length > 0 ? (
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {doctors.map((doctor) => (
-                <DoctorCard key={doctor.id} doctor={doctor} />
+                <DoctorCard
+                  key={doctor.id}
+                  doctor={doctor}
+                  userLocation={coords}
+                />
               ))}
             </div>
           ) : (
@@ -260,35 +271,326 @@ export default function PatientHome() {
   );
 }
 
-function DoctorCard({ doctor }) {
-  const doctorName =
-    doctor.name || `Dr. ${doctor.first_name} ${doctor.last_name}` || "Docteur";
+function DoctorCard({ doctor, userLocation }) {
+  // Extraction des vraies données depuis l'API
+  const doctorName = doctor.name || "Docteur";
   const specialty =
-    doctor.specialty || doctor.specialization || "Médecine générale";
-  const rating = doctor.rating || 4.5;
-  const fee = doctor.consultation_fee || doctor.fees || 15000;
-  const nextSlot = doctor.next_availability || "Sur RDV";
-  const distance = doctor.distance_km ? `${doctor.distance_km} km` : "";
+    doctor.profile?.specialty || doctor.specialty || "Médecine générale";
+  const rating = doctor.profile?.rating || 0;
+  const fee = doctor.profile?.fees || null;
+  const city = doctor.location?.city || "";
+  const bio = doctor.profile?.bio || "";
+  const photo = doctor.photo;
+  const doctorLat = doctor.location?.latitude;
+  const doctorLng = doctor.location?.longitude;
+
+  // Résolution de l'URL de la photo (gère photo stockée localement, base64 ou URL complète)
+  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+  const resolvePhoto = (photoSource) => {
+    const DEFAULT_AVATAR =
+      "https://cdn-icons-png.flaticon.com/512/847/847969.png";
+    if (!photoSource) return DEFAULT_AVATAR;
+    if (typeof photoSource !== "string") return DEFAULT_AVATAR;
+    if (photoSource.startsWith("http")) return photoSource;
+    if (photoSource.startsWith("data:image")) return photoSource;
+    // Si c'est un chemin relatif renvoyé par l'API (ex: "avatars/.."), construire l'URL complète
+    return `${API_URL}/storage/${photoSource}`;
+  };
+  const photoUrl = resolvePhoto(photo);
+
+  // Calculs dérivés
+  const shortBio = bio.length > 80 ? bio.substring(0, 80) + "..." : bio;
+  const hasRating = rating > 0;
+
+  // Calcul de la distance si coordonnées disponibles
+  const calculateDistance = (lat1, lng1, lat2, lng2) => {
+    if (!lat1 || !lng1 || !lat2 || !lng2) return null;
+
+    const R = 6371; // Rayon de la Terre en km
+    const dLat = ((lat2 - lat1) * Math.PI) / 180;
+    const dLng = ((lng2 - lng1) * Math.PI) / 180;
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos((lat1 * Math.PI) / 180) *
+        Math.cos((lat2 * Math.PI) / 180) *
+        Math.sin(dLng / 2) *
+        Math.sin(dLng / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  };
+
+  const distance =
+    userLocation && doctorLat && doctorLng
+      ? calculateDistance(
+          userLocation.lat,
+          userLocation.lng,
+          doctorLat,
+          doctorLng
+        )
+      : null;
+
+  const distanceText = distance
+    ? `${distance < 1 ? "< 1 km" : `${distance.toFixed(1)} km`}`
+    : "";
+
+  // Fonction pour obtenir l'icône et la couleur selon la spécialité
+  const getSpecialtyInfo = (specialty) => {
+    const specialtyMap = {
+      // Médecine générale et variantes
+      "Médecine générale": {
+        icon: Stethoscope,
+        color: "text-blue-600 dark:text-blue-400",
+      },
+      "Médecin general": {
+        icon: Stethoscope,
+        color: "text-blue-600 dark:text-blue-400",
+      },
+      "Médecine general": {
+        icon: Stethoscope,
+        color: "text-blue-600 dark:text-blue-400",
+      },
+      "Médecine Generale": {
+        icon: Stethoscope,
+        color: "text-blue-600 dark:text-blue-400",
+      },
+
+      // Cardiologie
+      Cardiologie: { icon: Heart, color: "text-red-600 dark:text-red-400" },
+      Cardiologue: { icon: Heart, color: "text-red-600 dark:text-red-400" },
+
+      // Dermatologie
+      Dermatologie: {
+        icon: Stethoscope,
+        color: "text-purple-600 dark:text-purple-400",
+      },
+      Dermatologue: {
+        icon: Stethoscope,
+        color: "text-purple-600 dark:text-purple-400",
+      },
+
+      // Ophtalmologie
+      Ophtalmologie: {
+        icon: Eye,
+        color: "text-green-600 dark:text-green-400",
+      },
+      Ophtalmologue: {
+        icon: Eye,
+        color: "text-green-600 dark:text-green-400",
+      },
+
+      // Pédiatrie
+      Pédiatrie: { icon: User, color: "text-pink-600 dark:text-pink-400" },
+      Pédiatre: { icon: User, color: "text-pink-600 dark:text-pink-400" },
+
+      // Gynécologie
+      Gynécologie: { icon: User, color: "text-rose-600 dark:text-rose-400" },
+      Gynécologue: { icon: User, color: "text-rose-600 dark:text-rose-400" },
+
+      // Orthopédie
+      Orthopédie: { icon: Bone, color: "text-orange-600 dark:text-orange-400" },
+      Orthopédiste: {
+        icon: Bone,
+        color: "text-orange-600 dark:text-orange-400",
+      },
+
+      // Neurologie
+      Neurologie: {
+        icon: Brain,
+        color: "text-indigo-600 dark:text-indigo-400",
+      },
+      Neurologue: {
+        icon: Brain,
+        color: "text-indigo-600 dark:text-indigo-400",
+      },
+
+      // Psychiatrie
+      Psychiatrie: {
+        icon: Brain,
+        color: "text-violet-600 dark:text-violet-400",
+      },
+      Psychiatre: {
+        icon: Brain,
+        color: "text-violet-600 dark:text-violet-400",
+      },
+
+      // Dentisterie
+      Dentisterie: {
+        icon: Activity,
+        color: "text-cyan-600 dark:text-cyan-400",
+      },
+      Dentiste: { icon: Activity, color: "text-cyan-600 dark:text-cyan-400" },
+    };
+    return (
+      specialtyMap[specialty] || {
+        icon: Stethoscope,
+        color: "text-cyan-600 dark:text-cyan-400",
+      }
+    );
+  };
+
+  const specialtyInfo = getSpecialtyInfo(specialty);
+
+  // Fonction pour corriger les fautes courantes dans les textes
+  const correctText = (text) => {
+    if (!text) return text;
+    return text
+      .replace(/pluseurs/g, "plusieurs")
+      .replace(/expericences/g, "expériences")
+      .replace(/experiance/g, "expérience")
+      .replace(/disponible/g, "disponible")
+      .replace(/professionel/g, "professionnel")
+      .replace(/professionelle/g, "professionnelle")
+      .replace(/specialiste/g, "spécialiste")
+      .replace(/general/g, "général")
+      .replace(/generale/g, "générale");
+  };
+
+  // Appliquer les corrections
+  const correctedBio = correctText(bio);
+  const correctedSpecialty = correctText(specialty);
+
+  // Recalculer specialtyInfo avec la spécialité corrigée
+  const correctedSpecialtyInfo = getSpecialtyInfo(correctedSpecialty);
+
+  // Fonction pour afficher les étoiles
+  const renderStars = (rating) => {
+    const stars = [];
+    const fullStars = Math.floor(rating);
+    const hasHalfStar = rating % 1 >= 0.5;
+
+    for (let i = 0; i < 5; i++) {
+      if (i < fullStars) {
+        stars.push(
+          <Star
+            key={i}
+            className="h-3 w-3 fill-yellow-400 text-yellow-400 inline"
+          />
+        );
+      } else if (i === fullStars && hasHalfStar) {
+        stars.push(
+          <Star
+            key={i}
+            className="h-3 w-3 fill-yellow-400/50 text-yellow-400 inline"
+          />
+        );
+      } else {
+        stars.push(<Star key={i} className="h-3 w-3 text-gray-300 inline" />);
+      }
+    }
+    return <span className="flex items-center gap-0.5">{stars}</span>;
+  };
 
   return (
     <div className="card">
-      <div className="h-36 bg-slate-200/60 dark:bg-slate-800/60 rounded-xl flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 bg-cyan-500/20 rounded-full flex items-center justify-center mx-auto mb-2">
-            <Stethoscope className="h-8 w-8 text-cyan-600" />
-          </div>
-          <div className="text-xs text-slate-600 dark:text-slate-400">
-            ⭐ {rating.toFixed(1)}
+      {/* Photo de profil - Optimisée pour un rendu parfait */}
+      <div className="aspect-square bg-linear-to-br from-slate-100 to-slate-200 dark:from-slate-700 dark:to-slate-800 rounded-xl overflow-hidden relative shadow-sm">
+        {/* État de chargement */}
+        <div className="absolute inset-0 flex items-center justify-center bg-slate-100 dark:bg-slate-700 animate-pulse">
+          <div className="w-8 h-8 border-2 border-cyan-500/30 border-t-cyan-500 rounded-full animate-spin"></div>
+        </div>
+
+        {/* Image principale avec optimisation */}
+        <img
+          src={photoUrl}
+          alt={`Photo de profil de ${doctorName}`}
+          className="w-full h-full object-cover object-center transition-all duration-300 ease-in-out hover:scale-105"
+          loading="lazy"
+          onLoad={(e) => {
+            // Masquer le loader quand l'image se charge
+            const loader =
+              e.target.parentElement.querySelector(".animate-pulse");
+            if (loader) loader.style.display = "none";
+          }}
+          onError={(e) => {
+            // Masquer l'image et afficher le fallback
+            e.target.style.display = "none";
+            const loader =
+              e.target.parentElement.querySelector(".animate-pulse");
+            if (loader) loader.style.display = "none";
+            const fallback =
+              e.target.parentElement.querySelector(".photo-fallback");
+            if (fallback) fallback.style.display = "flex";
+          }}
+        />
+
+        {/* Fallback élégant avec icône spécialisée */}
+        <div
+          className="photo-fallback absolute inset-0 flex items-center justify-center bg-linear-to-br from-cyan-50 to-teal-50 dark:from-cyan-900/20 dark:to-teal-900/20 transition-all duration-300"
+          style={{ display: "none" }}
+        >
+          <div className="text-center transform transition-transform duration-200 hover:scale-110">
+            <div className="w-16 h-16 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-full flex items-center justify-center mx-auto mb-2 shadow-lg border border-white/20 dark:border-slate-700/20">
+              <correctedSpecialtyInfo.icon className="h-8 w-8 text-cyan-600 dark:text-cyan-400" />
+            </div>
+            <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+              {correctedSpecialty}
+            </div>
           </div>
         </div>
+
+        {/* Rating en overlay avec design amélioré */}
+        {hasRating && (
+          <div className="absolute top-2 right-2 bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm rounded-lg px-2 py-1 text-xs font-semibold flex items-center gap-1 shadow-lg border border-white/20 dark:border-slate-700/20">
+            <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+            <span className="text-slate-700 dark:text-slate-200">
+              {rating.toFixed(1)}
+            </span>
+          </div>
+        )}
+
+        {/* Overlay de hover pour plus d'interactivité */}
+        <div className="absolute inset-0 bg-black/0 hover:bg-black/10 transition-colors duration-200 rounded-xl pointer-events-none"></div>
       </div>
+      {/* Informations */}
       <div className="mt-3">
-        <div className="font-medium">
-          {doctorName} — {specialty}
+        <div className="font-medium text-slate-900 dark:text-white">
+          {doctorName}
         </div>
-        <div className="text-sm text-slate-500">
-          {distance && `${distance} · `}Dès {nextSlot} · {fee.toLocaleString()}{" "}
-          FCFA
+        <div
+          className={`text-sm font-medium flex items-center gap-1 ${correctedSpecialtyInfo.color}`}
+        >
+          <correctedSpecialtyInfo.icon className="h-4 w-4" />
+          {correctedSpecialty}
+        </div>
+        <div className="flex items-center gap-2 mt-1">
+          {city && <div className="text-xs text-slate-500">📍 {city}</div>}
+          {distanceText && (
+            <div className="text-xs text-slate-500">• {distanceText}</div>
+          )}
+        </div>
+
+        {/* Rating avec étoiles */}
+        {hasRating && (
+          <div className="flex items-center gap-1 mt-2">
+            <span className="text-xs text-slate-600 dark:text-slate-400">
+              {renderStars(rating)}
+            </span>
+            <span className="text-xs text-slate-500">
+              ({rating.toFixed(1)})
+            </span>
+          </div>
+        )}
+
+        {/* Biographie courte */}
+        {shortBio && (
+          <p className="text-xs text-slate-600 dark:text-slate-400 mt-2 line-clamp-2">
+            {correctedBio.length > 80
+              ? correctedBio.substring(0, 80) + "..."
+              : correctedBio}
+          </p>
+        )}
+
+        {/* Prix et disponibilité */}
+        <div className="text-sm text-slate-500 mt-2">
+          {fee ? (
+            <span className="font-medium text-green-600 dark:text-green-400">
+              {fee.toLocaleString()} FCFA
+            </span>
+          ) : (
+            <span className="text-slate-400">Prix sur demande</span>
+          )}
+          <span className="mx-2">•</span>
+          <span>Sur RDV</span>
         </div>
       </div>
       <div className="mt-4 flex gap-2">
