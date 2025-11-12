@@ -1,69 +1,189 @@
 /* eslint-disable no-unused-vars */
-import { useMemo } from "react";
+import {
+  addDays,
+  addMonths,
+  eachDayOfInterval,
+  endOfMonth,
+  format,
+  isPast,
+  isSameDay,
+  isSameMonth,
+  isToday,
+  startOfMonth,
+  startOfWeek,
+  subMonths,
+} from "date-fns";
 import { motion } from "framer-motion";
-import { addDays, format, startOfWeek, isSameDay } from "date-fns";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useMemo, useState } from "react";
 
 export default function SchedulePicker({
-    weekStart = new Date(),
-    value, // { date: Date, time: "HH:mm" }
-    onChange,
-    slots = {}, // { 'YYYY-MM-DD': ['09:00','09:30',...] }
+  value, // { date: Date, time: "HH:mm" }
+  onChange,
+  slots = {}, // { 'YYYY-MM-DD': ['09:00','09:30',...] }
 }) {
-    const days = useMemo(() => {
-        const start = startOfWeek(weekStart, { weekStartsOn: 1 });
-        return Array.from({ length: 7 }, (_, i) => addDays(start, i));
-    }, [weekStart]);
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState(value?.date || null);
 
-    return (
-        <div className="space-y-3">
-            <div className="grid grid-cols-7 gap-2">
-                {days.map((d) => (
-                    <div key={d.toISOString()} className="text-center text-xs font-medium text-slate-500">
-                        {format(d, "EEE")}
-                        <div className="text-base text-slate-900 dark:text-slate-100">{format(d, "d")}</div>
-                    </div>
-                ))}
-            </div>
-            <div className="grid grid-cols-7 gap-2">
-                {days.map((d) => (
-                    <DayColumn
-                        key={d.toISOString()}
-                        date={d}
-                        slots={slots[format(d, "yyyy-MM-dd")] || []}
-                        selected={value && isSameDay(value.date, d) ? value.time : null}
-                        onSelect={(time) => onChange?.({ date: d, time })}
-                    />
-                ))}
-            </div>
-        </div>
-    );
-}
+  // Calculer les jours du mois avec indicateurs de disponibilité
+  const monthDays = useMemo(() => {
+    const monthStart = startOfMonth(currentMonth);
+    const monthEnd = endOfMonth(currentMonth);
+    const calendarStart = startOfWeek(monthStart, { weekStartsOn: 1 });
+    const calendarEnd = addDays(startOfWeek(monthEnd, { weekStartsOn: 1 }), 6);
 
-function DayColumn({ date, slots, selected, onSelect }) {
-    if (!slots.length) {
-        return (
-            <div className="min-h-[260px] rounded-xl border border-dashed border-slate-200 dark:border-slate-800 text-center text-xs text-slate-400 grid place-items-center">
-                Aucune dispo
-            </div>
-        );
+    return eachDayOfInterval({ start: calendarStart, end: calendarEnd });
+  }, [currentMonth]);
+
+  // Vérifier si un jour a des créneaux disponibles
+  const hasSlots = (date) => {
+    const dateKey = format(date, "yyyy-MM-dd");
+    return slots[dateKey] && slots[dateKey].length > 0;
+  };
+
+  // Gérer la sélection d'un jour
+  const handleDateSelect = (date) => {
+    if (hasSlots(date) && !isPast(date)) {
+      setSelectedDate(date);
+      // Si onChange est fourni, on peut l'appeler avec la date seulement
+      // Les créneaux horaires seront affichés dans la section détaillée
     }
-    return (
-        <div className="min-h-[260px] p-2 rounded-xl border border-slate-200 dark:border-slate-800">
-            <div className="grid gap-2">
-                {slots.map((t) => (
-                    <motion.button
-                        key={t}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => onSelect(t)}
-                        className={`px-2 py-1 rounded-lg text-xs border transition ${selected === t
-                                ? "bg-linear-to-r from-cyan-500 to-teal-500 text-white border-transparent"
-                                : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800"
-                            }`}
-                    >
-                        {t}
-                    </motion.button>
-                ))}
-            </div>
+  };
+
+  // Navigation mois
+  const nextMonth = () => setCurrentMonth(addMonths(currentMonth, 1));
+  const prevMonth = () => setCurrentMonth(subMonths(currentMonth, 1));
+
+  return (
+    <div className="space-y-4">
+      {/* En-tête du calendrier avec navigation */}
+      <div className="flex items-center justify-between">
+        <button
+          onClick={prevMonth}
+          className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </button>
+        <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+          {format(currentMonth, "MMMM yyyy")}
+        </h3>
+        <button
+          onClick={nextMonth}
+          className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+        >
+          <ChevronRight className="h-4 w-4" />
+        </button>
+      </div>
+
+      {/* Jours de la semaine */}
+      <div className="grid grid-cols-7 gap-1">
+        {["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"].map((day) => (
+          <div
+            key={day}
+            className="text-center text-xs font-medium text-slate-500 py-2"
+          >
+            {day}
+          </div>
+        ))}
+      </div>
+
+      {/* Grille des jours */}
+      <div className="grid grid-cols-7 gap-1">
+        {monthDays.map((date) => {
+          const isCurrentMonth = isSameMonth(date, currentMonth);
+          const isSelected = selectedDate && isSameDay(date, selectedDate);
+          const hasAvailability = hasSlots(date);
+          const isPastDate = isPast(date) && !isToday(date);
+
+          return (
+            <motion.button
+              key={date.toISOString()}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => handleDateSelect(date)}
+              disabled={!hasAvailability || isPastDate}
+              className={`
+                                relative h-12 w-full rounded-lg border text-sm font-medium transition-all
+                                ${
+                                  !isCurrentMonth
+                                    ? "text-slate-300 dark:text-slate-600"
+                                    : "text-slate-900 dark:text-slate-100"
+                                }
+                                ${
+                                  isSelected
+                                    ? "bg-cyan-500 text-white border-cyan-500"
+                                    : hasAvailability && !isPastDate
+                                    ? "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 hover:bg-green-100 dark:hover:bg-green-800/30"
+                                    : "bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700"
+                                }
+                                ${
+                                  isPastDate || !hasAvailability
+                                    ? "cursor-not-allowed opacity-50"
+                                    : "cursor-pointer hover:shadow-md"
+                                }
+                            `}
+            >
+              <span className="relative z-10">{format(date, "d")}</span>
+
+              {/* Indicateur de disponibilité */}
+              {hasAvailability && !isPastDate && (
+                <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2">
+                  <div className="w-1 h-1 bg-green-500 rounded-full"></div>
+                </div>
+              )}
+
+              {/* Indicateur aujourd'hui */}
+              {isToday(date) && (
+                <div className="absolute top-1 right-1">
+                  <div className="w-1 h-1 bg-cyan-500 rounded-full"></div>
+                </div>
+              )}
+            </motion.button>
+          );
+        })}
+      </div>
+
+      {/* Légende */}
+      <div className="flex items-center justify-center gap-6 text-xs text-slate-500">
+        <div className="flex items-center gap-2">
+          <div className="w-3 h-3 bg-green-100 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded"></div>
+          <span>Disponible</span>
         </div>
-    );
+        <div className="flex items-center gap-2">
+          <div className="w-3 h-3 bg-cyan-500 rounded-full"></div>
+          <span>Aujourd'hui</span>
+        </div>
+      </div>
+
+      {/* Section des créneaux horaires pour le jour sélectionné */}
+      {selectedDate && hasSlots(selectedDate) && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mt-6 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl"
+        >
+          <h4 className="text-sm font-medium text-slate-900 dark:text-slate-100 mb-3">
+            Créneaux disponibles le {format(selectedDate, "EEEE d MMMM")}
+          </h4>
+          <div className="grid grid-cols-4 gap-2">
+            {slots[format(selectedDate, "yyyy-MM-dd")].map((time) => (
+              <motion.button
+                key={time}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => onChange?.({ date: selectedDate, time })}
+                className={`px-3 py-2 rounded-lg text-sm border transition-all ${
+                  value &&
+                  isSameDay(value.date, selectedDate) &&
+                  value.time === time
+                    ? "bg-cyan-500 text-white border-cyan-500"
+                    : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800"
+                }`}
+              >
+                {time}
+              </motion.button>
+            ))}
+          </div>
+        </motion.div>
+      )}
+    </div>
+  );
 }

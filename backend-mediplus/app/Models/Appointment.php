@@ -12,7 +12,8 @@ class Appointment extends Model
         'scheduled_at',
         'status',
         'reason',
-        'notes'
+        'notes',
+        'mode'
     ];
 
     protected $casts = [

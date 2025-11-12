@@ -54,6 +54,7 @@ class AppointmentController extends Controller
             'doctor_id' => 'required|exists:users,id',
             'scheduled_at' => 'required|date',
             'reason' => 'nullable|string',
+            'mode' => 'required|in:presentiel,teleconsult,professionnel',
         ]);
 
         $appointment = Appointment::create([
@@ -61,6 +62,7 @@ class AppointmentController extends Controller
             'doctor_id' => $data['doctor_id'],
             'scheduled_at' => $data['scheduled_at'],
             'reason' => $data['reason'] ?? null,
+            'mode' => $data['mode'],
         ]);
 
         return response()->json(['message' => 'Rendez-vous réservé', 'appointment' => $appointment], 201);

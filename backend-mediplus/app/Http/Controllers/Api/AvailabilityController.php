@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Availability;
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class AvailabilityController extends Controller
@@ -142,6 +143,11 @@ class AvailabilityController extends Controller
     // GET /api/doctors/{doctorId}/availabilities - Route publique pour les patients
     public function show($doctorId)
     {
+        // Récupérer les informations du médecin
+        $doctor = User::where('role', 'doctor')
+            ->with('doctorProfile')
+            ->findOrFail($doctorId);
+
         // Récupérer les disponibilités du médecin
         $availabilities = Availability::where('doctor_id', $doctorId)->get();
 
@@ -150,10 +156,10 @@ class AvailabilityController extends Controller
 
         return response()->json([
             'doctor' => [
-                'id' => $doctorId,
-                'name' => 'Docteur', // TODO: Récupérer depuis le profil du médecin
-                'specialty' => 'Médecine générale', // TODO: Récupérer depuis le profil
-                'fees' => 10000 // TODO: Récupérer depuis le profil
+                'id' => $doctor->id,
+                'name' => $doctor->name,
+                'specialty' => $doctor->doctorProfile?->specialty ?? $doctor->doctorProfile?->primary_specialty ?? 'Médecine générale',
+                'fees' => $doctor->doctorProfile?->fees ?? 0
             ],
             'slots' => $slots
         ]);

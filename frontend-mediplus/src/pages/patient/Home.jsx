@@ -5,6 +5,7 @@ import {
   AlertTriangle,
   Bone,
   Brain,
+  Calendar,
   Eye,
   Heart,
   MapPin,
@@ -722,16 +723,40 @@ function DoctorCard({ doctor, userLocation }) {
       </div>
       <div className="mt-4 flex gap-2 sm:gap-3 animate-in fade-in-0 slide-in-from-bottom-2 duration-300 delay-600">
         <Link
-          className="btn-secondary flex-1 text-sm sm:text-base py-2 px-3 sm:px-4 transition-all duration-200 hover:scale-105 hover:shadow-md active:scale-95 hover:bg-slate-100 dark:hover:bg-slate-700"
+          className="btn-secondary flex-1 text-sm sm:text-base py-2 px-3 sm:px-4 transition-all duration-200 hover:scale-105 hover:shadow-md active:scale-95 hover:bg-slate-100 dark:hover:bg-slate-700 group"
           to={`/doctor/${doctor.id}`}
+          title="Voir le profil complet du médecin"
+          aria-label={`Voir les détails de ${doctorName}`}
         >
-          Détails
+          <Eye className="h-4 w-4 mr-2 transition-transform duration-200 group-hover:scale-110" />
+          Voir profil
         </Link>
         <Link
-          className="btn-primary flex-1 text-sm sm:text-base py-2 px-3 sm:px-4 transition-all duration-200 hover:scale-105 hover:shadow-md active:scale-95 hover:bg-cyan-600 dark:hover:bg-cyan-500"
-          to={`/booking/${doctor.id}`}
+          className={`flex-1 text-sm sm:text-base py-2 px-3 sm:px-4 rounded-lg font-medium transition-all duration-200 hover:scale-105 hover:shadow-md active:scale-95 group ${
+            nextSlot
+              ? "btn-primary hover:bg-cyan-600 dark:hover:bg-cyan-500"
+              : "bg-slate-300 dark:bg-slate-600 text-slate-500 dark:text-slate-400 cursor-not-allowed"
+          }`}
+          to={nextSlot ? `/booking/${doctor.id}` : "#"}
+          onClick={(e) => {
+            if (!nextSlot) {
+              e.preventDefault();
+              // Optionnel : afficher un message ou rediriger vers les détails
+            }
+          }}
+          title={
+            nextSlot
+              ? `Réserver un rendez-vous - Prochain créneau: ${nextSlot.formatted}`
+              : "Aucun créneau disponible actuellement"
+          }
+          aria-label={
+            nextSlot
+              ? `Réserver un rendez-vous avec ${doctorName} - Disponible ${nextSlot.formatted}`
+              : `Aucun créneau disponible pour ${doctorName}`
+          }
         >
-          Réserver
+          <Calendar className="h-4 w-4 mr-2 transition-transform duration-200 group-hover:scale-110" />
+          {nextSlot ? "Réserver RDV" : "Indisponible"}
         </Link>
       </div>
     </motion.div>

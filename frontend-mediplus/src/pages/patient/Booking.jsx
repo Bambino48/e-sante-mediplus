@@ -24,7 +24,7 @@ export default function Booking() {
     if (data?.doctor) setDoctor(data.doctor);
   }, [data, setDoctor]);
 
-  const slots = data?.slots || {};
+  const slots = useMemo(() => data?.slots || {}, [data?.slots]);
 
   const mutation = useMutation({
     mutationFn: bookAppointment,
@@ -87,6 +87,11 @@ export default function Booking() {
                   label="Téléconsultation"
                   active={mode === "teleconsult"}
                   onClick={() => setMode("teleconsult")}
+                />
+                <ModeButton
+                  label="Professionnel"
+                  active={mode === "professionnel"}
+                  onClick={() => setMode("professionnel")}
                 />
               </div>
             </div>
