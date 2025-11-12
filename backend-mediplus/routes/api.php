@@ -139,3 +139,4 @@ Route::middleware('auth:sanctum')->group(function () {
 Route::get('/doctors', [DoctorController::class, 'index']);
 Route::get('/search', [DoctorController::class, 'search']);
 Route::get('/doctors/{id}', [DoctorController::class, 'show']);
+Route::get('/doctors/{id}/availabilities', [AvailabilityController::class, 'show']);

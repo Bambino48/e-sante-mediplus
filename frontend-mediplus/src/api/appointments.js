@@ -41,55 +41,8 @@ export async function updateAppointment(appointmentId, payload) {
   return data;
 }
 
-// 🧪 MOCK - Disponibilités médecin (en attendant l'API réelle)
+// ✅ API Réelles - Disponibilités médecin
 export async function getDoctorAvailabilities(doctorId) {
-  // TODO: Connecter à l'API réelle quand disponible
-  // const { data } = await api.get(`/doctors/${doctorId}/availabilities`);
-
-  // Génère une semaine de slots fictifs
-  const today = new Date();
-  const start = new Date(
-    today.getFullYear(),
-    today.getMonth(),
-    today.getDate()
-  );
-  const byDay = {};
-  for (let i = 0; i < 7; i++) {
-    const d = new Date(start);
-    d.setDate(d.getDate() + i);
-    const key = d.toISOString().slice(0, 10);
-    const slots = [];
-    for (let h = 9; h <= 16; h++) {
-      if (Math.random() > 0.2) slots.push(`${String(h).padStart(2, "0")}:00`);
-      if (Math.random() > 0.7) slots.push(`${String(h).padStart(2, "0")}:30`);
-    }
-    byDay[key] = slots;
-  }
-  return { doctor: mockDoctor(doctorId), slots: byDay };
-}
-
-function mockDoctor(id) {
-  const map = {
-    1: {
-      id: 1,
-      name: "Dr Marie Kouassi",
-      specialty: "Cardiologie",
-      fees: 15000,
-    },
-    2: {
-      id: 2,
-      name: "Clinique Santé Plus",
-      specialty: "Centre médical",
-      fees: 10000,
-    },
-    3: { id: 3, name: "Dr Mamadou Keita", specialty: "Pédiatrie", fees: 12000 },
-  };
-  return (
-    map[id] || {
-      id,
-      name: `Docteur #${id}`,
-      specialty: "Médecine générale",
-      fees: 10000,
-    }
-  );
+  const { data } = await api.get(`/doctors/${doctorId}/availabilities`);
+  return data;
 }

@@ -138,4 +138,88 @@ class AvailabilityController extends Controller
             'message' => 'Disponibilité supprimée avec succès'
         ]);
     }
+
+    // GET /api/doctors/{doctorId}/availabilities - Route publique pour les patients
+    public function show($doctorId)
+    {
+        // Récupérer les disponibilités du médecin
+        $availabilities = Availability::where('doctor_id', $doctorId)->get();
+
+        // Générer les slots pour les 7 prochains jours
+        $slots = $this->generateAvailableSlots($availabilities);
+
+        return response()->json([
+            'doctor' => [
+                'id' => $doctorId,
+                'name' => 'Docteur', // TODO: Récupérer depuis le profil du médecin
+                'specialty' => 'Médecine générale', // TODO: Récupérer depuis le profil
+                'fees' => 10000 // TODO: Récupérer depuis le profil
+            ],
+            'slots' => $slots
+        ]);
+    }
+
+    private function generateAvailableSlots($availabilities)
+    {
+        $slots = [];
+        $now = now();
+        $endDate = now()->addDays(7);
+
+        // Pour chaque jour de la semaine prochaine
+        for ($date = $now->copy(); $date->lte($endDate); $date->addDay()) {
+            $dayOfWeek = $date->dayOfWeekIso; // 1 = Lundi, 7 = Dimanche
+            $dateKey = $date->toDateString();
+
+            $daySlots = [];
+
+            // Trouver les disponibilités pour ce jour
+            foreach ($availabilities as $availability) {
+                if ($availability->is_recurring && $availability->day_of_week == $dayOfWeek) {
+                    // Disponibilité récurrente
+                    $daySlots = array_merge($daySlots, $this->generateTimeSlots(
+                        $availability->start_time,
+                        $availability->end_time
+                    ));
+                } elseif (!$availability->is_recurring && $availability->date == $dateKey) {
+                    // Disponibilité ponctuelle
+                    $daySlots = array_merge($daySlots, $this->generateTimeSlots(
+                        $availability->start_time,
+                        $availability->end_time
+                    ));
+                }
+            }
+
+            // Trier et dédupliquer les slots
+            $daySlots = array_unique($daySlots);
+            sort($daySlots);
+
+            // Pour aujourd'hui, filtrer les slots passés
+            if ($date->isToday()) {
+                $currentTime = $now->format('H:i');
+                $daySlots = array_filter($daySlots, function ($slot) use ($currentTime) {
+                    return $slot > $currentTime;
+                });
+            }
+
+            if (!empty($daySlots)) {
+                $slots[$dateKey] = array_values($daySlots);
+            }
+        }
+
+        return $slots;
+    }
+
+    private function generateTimeSlots($startTime, $endTime)
+    {
+        $slots = [];
+        $start = \Carbon\Carbon::createFromFormat('H:i:s', $startTime);
+        $end = \Carbon\Carbon::createFromFormat('H:i:s', $endTime);
+
+        while ($start->lt($end)) {
+            $slots[] = $start->format('H:i');
+            $start->addMinutes(30); // Slots de 30 minutes
+        }
+
+        return $slots;
+    }
 }

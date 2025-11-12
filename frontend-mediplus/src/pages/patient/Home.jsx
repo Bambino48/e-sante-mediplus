@@ -17,6 +17,7 @@ import {
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { getDoctorsList } from "../../api/doctors.js";
+import { useDoctorAvailabilities } from "../../hooks/useDoctors.js";
 import { useGeo } from "../../hooks/useGeo.js";
 
 export default function PatientHome() {
@@ -246,7 +247,7 @@ export default function PatientHome() {
               </button>
             </div>
           ) : doctors.length > 0 ? (
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
               {doctors.map((doctor) => (
                 <DoctorCard
                   key={doctor.id}
@@ -272,17 +273,28 @@ export default function PatientHome() {
 }
 
 function DoctorCard({ doctor, userLocation }) {
-  // Extraction des vraies données depuis l'API
-  const doctorName = doctor.name || "Docteur";
+  // Extraction des vraies données depuis l'API avec fallbacks améliorés
+  const doctorName = doctor?.name || doctor?.profile?.name || "Médecin";
   const specialty =
-    doctor.profile?.specialty || doctor.specialty || "Médecine générale";
-  const rating = doctor.profile?.rating || 0;
-  const fee = doctor.profile?.fees || null;
-  const city = doctor.location?.city || "";
-  const bio = doctor.profile?.bio || "";
-  const photo = doctor.photo;
-  const doctorLat = doctor.location?.latitude;
-  const doctorLng = doctor.location?.longitude;
+    doctor?.profile?.specialty ||
+    doctor?.specialty ||
+    doctor?.profile?.primary_specialty ||
+    "Médecine générale";
+  const rating = doctor?.profile?.rating || doctor?.rating || 0;
+  const fee = doctor?.profile?.fees || doctor?.fees || null;
+  const city = doctor?.location?.city || doctor?.city || "";
+  const bio = doctor?.profile?.bio || doctor?.bio || "";
+  const photo = doctor?.photo || doctor?.profile?.photo;
+  const doctorLat = doctor?.location?.latitude || doctor?.lat;
+  const doctorLng = doctor?.location?.longitude || doctor?.lng;
+  const memberSince = doctor?.member_since || doctor?.created_at;
+
+  // Hook pour récupérer les disponibilités du médecin
+  const {
+    data: availabilityData,
+    isLoading: availabilityLoading,
+    error: availabilityError,
+  } = useDoctorAvailabilities(doctor.id);
 
   // Résolution de l'URL de la photo (gère photo stockée localement, base64 ou URL complète)
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
@@ -423,7 +435,7 @@ function DoctorCard({ doctor, userLocation }) {
     return (
       specialtyMap[specialty] || {
         icon: Stethoscope,
-        color: "text-cyan-600 dark:text-cyan-400",
+        color: "text-slate-600 dark:text-slate-400",
       }
     );
   };
@@ -480,36 +492,116 @@ function DoctorCard({ doctor, userLocation }) {
     return <span className="flex items-center gap-0.5">{stars}</span>;
   };
 
+  // Fonction pour trouver le prochain créneau disponible
+  const getNextAvailableSlot = (availabilityData) => {
+    if (!availabilityData?.slots) return null;
+
+    const now = new Date();
+    const today = now.toISOString().slice(0, 10);
+    const currentTime = now.getHours() * 100 + now.getMinutes(); // Format HHMM
+
+    // Parcourir les prochains jours (aujourd'hui inclus)
+    const dates = Object.keys(availabilityData.slots).sort();
+
+    for (const date of dates) {
+      const slots = availabilityData.slots[date];
+      if (!slots || slots.length === 0) continue;
+
+      // Si c'est aujourd'hui, filtrer les slots passés
+      let availableSlots = slots;
+      if (date === today) {
+        availableSlots = slots.filter((slot) => {
+          const [hours, minutes] = slot.split(":").map(Number);
+          const slotTime = hours * 100 + minutes;
+          return slotTime > currentTime;
+        });
+      }
+
+      // Si on a des slots disponibles pour ce jour
+      if (availableSlots.length > 0) {
+        const nextSlot = availableSlots[0];
+        return {
+          date,
+          time: nextSlot,
+          formatted: formatAvailability(date, nextSlot),
+        };
+      }
+    }
+
+    return null;
+  };
+
+  // Fonction pour formater l'affichage de la disponibilité
+  const formatAvailability = (date, time) => {
+    const now = new Date();
+    const slotDate = new Date(date);
+    const today = now.toISOString().slice(0, 10);
+    const tomorrow = new Date(now);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowStr = tomorrow.toISOString().slice(0, 10);
+
+    let dateText = "";
+    if (date === today) {
+      dateText = "Aujourd'hui";
+    } else if (date === tomorrowStr) {
+      dateText = "Demain";
+    } else {
+      const options = { weekday: "short", day: "numeric", month: "short" };
+      dateText = slotDate.toLocaleDateString("fr-FR", options);
+    }
+
+    return `${dateText} à ${time}`;
+  };
+
+  // Calculer le prochain slot disponible
+  const nextSlot = getNextAvailableSlot(availabilityData);
+
   return (
-    <div className="card">
+    <motion.div
+      className="card group hover:shadow-xl hover:-translate-y-1 transition-all duration-300 ease-out cursor-pointer w-full max-w-sm mx-auto sm:max-w-none"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, delay: Math.random() * 0.2 }}
+      whileHover={{ y: -4 }}
+    >
       {/* Photo de profil - Optimisée pour un rendu parfait */}
-      <div className="aspect-square bg-linear-to-br from-slate-100 to-slate-200 dark:from-slate-700 dark:to-slate-800 rounded-xl overflow-hidden relative shadow-sm">
-        {/* État de chargement */}
+      <div className="aspect-square bg-linear-to-br from-slate-100 to-slate-200 dark:from-slate-700 dark:to-slate-800 rounded-xl overflow-hidden relative shadow-sm group">
+        {/* État de chargement amélioré */}
         <div className="absolute inset-0 flex items-center justify-center bg-slate-100 dark:bg-slate-700 animate-pulse">
-          <div className="w-8 h-8 border-2 border-cyan-500/30 border-t-cyan-500 rounded-full animate-spin"></div>
+          <div className="text-center">
+            <div className="w-12 h-12 bg-slate-200 dark:bg-slate-600 rounded-full mx-auto mb-2 animate-pulse"></div>
+            <div className="w-16 h-3 bg-slate-200 dark:bg-slate-600 rounded animate-pulse"></div>
+          </div>
         </div>
 
-        {/* Image principale avec optimisation */}
+        {/* Image principale avec optimisation améliorée */}
         <img
           src={photoUrl}
           alt={`Photo de profil de ${doctorName}`}
-          className="w-full h-full object-cover object-center transition-all duration-300 ease-in-out hover:scale-105"
+          className="w-full h-full object-cover object-center transition-all duration-300 ease-out group-hover:scale-105 opacity-0 animate-in fade-in-0"
           loading="lazy"
+          decoding="async"
+          fetchPriority="high"
           onLoad={(e) => {
-            // Masquer le loader quand l'image se charge
+            // Masquer le loader et animer l'apparition
+            e.target.classList.remove("opacity-0");
+            e.target.classList.add("opacity-100");
             const loader =
               e.target.parentElement.querySelector(".animate-pulse");
             if (loader) loader.style.display = "none";
           }}
           onError={(e) => {
-            // Masquer l'image et afficher le fallback
+            // Masquer l'image et afficher le fallback avec animation
             e.target.style.display = "none";
             const loader =
               e.target.parentElement.querySelector(".animate-pulse");
             if (loader) loader.style.display = "none";
             const fallback =
               e.target.parentElement.querySelector(".photo-fallback");
-            if (fallback) fallback.style.display = "flex";
+            if (fallback) {
+              fallback.style.display = "flex";
+              fallback.classList.add("animate-in", "fade-in-0", "duration-300");
+            }
           }}
         />
 
@@ -541,27 +633,42 @@ function DoctorCard({ doctor, userLocation }) {
         {/* Overlay de hover pour plus d'interactivité */}
         <div className="absolute inset-0 bg-black/0 hover:bg-black/10 transition-colors duration-200 rounded-xl pointer-events-none"></div>
       </div>
-      {/* Informations */}
-      <div className="mt-3">
-        <div className="font-medium text-slate-900 dark:text-white">
+      {/* Informations avec animations d'entrée */}
+      <div className="mt-3 space-y-2 animate-in fade-in-0 slide-in-from-bottom-2 duration-300 delay-100">
+        <div className="font-medium text-slate-900 dark:text-white leading-tight group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors duration-200">
           {doctorName}
         </div>
         <div
-          className={`text-sm font-medium flex items-center gap-1 ${correctedSpecialtyInfo.color}`}
+          className={`text-sm font-medium flex items-center gap-1 transition-all duration-200 group-hover:scale-105 ${correctedSpecialtyInfo.color}`}
         >
-          <correctedSpecialtyInfo.icon className="h-4 w-4" />
-          {correctedSpecialty}
+          <correctedSpecialtyInfo.icon className="h-4 w-4 shrink-0" />
+          <span className="truncate">{correctedSpecialty}</span>
         </div>
-        <div className="flex items-center gap-2 mt-1">
-          {city && <div className="text-xs text-slate-500">📍 {city}</div>}
+        <div className="flex items-center gap-2 text-xs text-slate-500 animate-in fade-in-0 slide-in-from-bottom-1 duration-300 delay-200">
+          {city ? (
+            <div className="flex items-center gap-1 hover:text-slate-700 dark:hover:text-slate-300 transition-colors duration-200">
+              <MapPin className="h-3 w-3" />
+              <span>{city}</span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-1 text-slate-400">
+              <MapPin className="h-3 w-3" />
+              <span>Localisation non précisée</span>
+            </div>
+          )}
           {distanceText && (
-            <div className="text-xs text-slate-500">• {distanceText}</div>
+            <>
+              <span className="text-slate-300 dark:text-slate-600">•</span>
+              <span className="font-medium text-green-600 dark:text-green-400">
+                {distanceText}
+              </span>
+            </>
           )}
         </div>
 
-        {/* Rating avec étoiles */}
+        {/* Rating avec étoiles et animations */}
         {hasRating && (
-          <div className="flex items-center gap-1 mt-2">
+          <div className="flex items-center gap-1 mt-2 animate-in fade-in-0 slide-in-from-left-2 duration-300 delay-300">
             <span className="text-xs text-slate-600 dark:text-slate-400">
               {renderStars(rating)}
             </span>
@@ -571,37 +678,63 @@ function DoctorCard({ doctor, userLocation }) {
           </div>
         )}
 
-        {/* Biographie courte */}
+        {/* Biographie courte avec animation */}
         {shortBio && (
-          <p className="text-xs text-slate-600 dark:text-slate-400 mt-2 line-clamp-2">
+          <p className="text-xs text-slate-600 dark:text-slate-400 mt-2 line-clamp-2 animate-in fade-in-0 slide-in-from-bottom-1 duration-300 delay-400 leading-relaxed">
             {correctedBio.length > 80
               ? correctedBio.substring(0, 80) + "..."
               : correctedBio}
           </p>
         )}
 
-        {/* Prix et disponibilité */}
-        <div className="text-sm text-slate-500 mt-2">
+        {/* Prix et disponibilité avec animation */}
+        <div className="text-sm text-slate-500 mt-3 animate-in fade-in-0 slide-in-from-bottom-1 duration-300 delay-500">
           {fee ? (
-            <span className="font-medium text-green-600 dark:text-green-400">
+            <span className="font-medium text-green-600 dark:text-green-400 transition-colors duration-200 hover:scale-105 inline-block">
               {fee.toLocaleString()} FCFA
             </span>
           ) : (
-            <span className="text-slate-400">Prix sur demande</span>
+            <span className="text-slate-400 italic">Prix sur demande</span>
           )}
-          <span className="mx-2">•</span>
-          <span>Sur RDV</span>
+          <span className="mx-2 text-slate-300 dark:text-slate-600">•</span>
+          {availabilityLoading ? (
+            <span className="text-slate-400 animate-pulse inline-flex items-center gap-1">
+              <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce"></div>
+              <div
+                className="w-2 h-2 bg-slate-400 rounded-full animate-bounce"
+                style={{ animationDelay: "0.1s" }}
+              ></div>
+              <div
+                className="w-2 h-2 bg-slate-400 rounded-full animate-bounce"
+                style={{ animationDelay: "0.2s" }}
+              ></div>
+            </span>
+          ) : availabilityError ? (
+            <span className="text-slate-400 italic">Sur RDV</span>
+          ) : nextSlot ? (
+            <span className="font-medium text-green-600 dark:text-green-400 transition-colors duration-200 hover:scale-105 inline-block">
+              {nextSlot.formatted}
+            </span>
+          ) : (
+            <span className="text-slate-400 italic">Sur RDV</span>
+          )}
         </div>
       </div>
-      <div className="mt-4 flex gap-2">
-        <Link className="btn-secondary flex-1" to={`/doctor/${doctor.id}`}>
+      <div className="mt-4 flex gap-2 sm:gap-3 animate-in fade-in-0 slide-in-from-bottom-2 duration-300 delay-600">
+        <Link
+          className="btn-secondary flex-1 text-sm sm:text-base py-2 px-3 sm:px-4 transition-all duration-200 hover:scale-105 hover:shadow-md active:scale-95 hover:bg-slate-100 dark:hover:bg-slate-700"
+          to={`/doctor/${doctor.id}`}
+        >
           Détails
         </Link>
-        <Link className="btn-primary flex-1" to={`/booking/${doctor.id}`}>
+        <Link
+          className="btn-primary flex-1 text-sm sm:text-base py-2 px-3 sm:px-4 transition-all duration-200 hover:scale-105 hover:shadow-md active:scale-95 hover:bg-cyan-600 dark:hover:bg-cyan-500"
+          to={`/booking/${doctor.id}`}
+        >
           Réserver
         </Link>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
