@@ -1,5 +1,3 @@
-/* eslint-disable no-unused-vars */
-// src/pages/patient/Doctor.jsx
 import { motion } from "framer-motion";
 import {
   Activity,
@@ -21,12 +19,15 @@ import {
   Stethoscope,
 } from "lucide-react";
 import { useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { Card, CardContent, CardHeader } from "../../components/Card.jsx";
+import { useAuth } from "../../hooks/useAuth.js";
 import { useDoctor, useDoctorAvailabilities } from "../../hooks/useDoctors.js";
 
 export default function Doctor() {
   const { id } = useParams();
+  const navigate = useNavigate();
+  const { user, isLoading: authLoading } = useAuth();
   const { data, isLoading, error } = useDoctor(id);
   const { data: availabilityData, isLoading: availabilityLoading } =
     useDoctorAvailabilities(id);
@@ -61,6 +62,17 @@ export default function Doctor() {
     : null;
 
   const [showAllReviews, setShowAllReviews] = useState(false);
+
+  // Fonction pour gérer la réservation avec vérification d'authentification
+  const handleBookingClick = (e) => {
+    if (!user) {
+      e.preventDefault();
+      // Rediriger vers la page de connexion avec le paramètre de redirection
+      navigate(`/login?redirect=/booking/${id}`);
+      return;
+    }
+    // Si l'utilisateur est connecté, continuer vers la page de réservation
+  };
 
   // Fonction pour obtenir l'icône de spécialité
   const getSpecialtyInfo = (specialty) => {
@@ -353,7 +365,7 @@ export default function Doctor() {
                   className={`btn-primary flex items-center gap-2 ${
                     !nextSlot ? "opacity-50 cursor-not-allowed" : ""
                   }`}
-                  onClick={(e) => !nextSlot && e.preventDefault()}
+                  onClick={handleBookingClick}
                 >
                   <Calendar className="h-4 w-4" />
                   {nextSlot ? "Prendre RDV" : "Indisponible"}

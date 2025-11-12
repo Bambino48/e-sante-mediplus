@@ -14,13 +14,18 @@ export default function Login() {
     e.preventDefault();
     try {
       const loggedUser = await login(form);
+      // Vérifier d'abord le paramètre redirect dans l'URL
+      const urlParams = new URLSearchParams(location.search);
+      const redirectParam = urlParams.get("redirect");
+
       const redirect =
-        loggedUser.role === "admin"
+        redirectParam ||
+        (loggedUser.role === "admin"
           ? "/admin/dashboard"
           : loggedUser.role === "patient"
           ? "/patient/dashboard"
-          : "/pro/dashboard";
-      setRedirectPath(location.state?.from?.pathname || redirect);
+          : "/pro/dashboard");
+      setRedirectPath(redirect);
       setShouldRedirect(true);
     } catch {
       // Erreur déjà gérée dans le hook useAuth

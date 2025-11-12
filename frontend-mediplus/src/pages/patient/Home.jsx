@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 import { motion } from "framer-motion";
 import {
   Activity,
@@ -18,6 +17,7 @@ import {
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { getDoctorsList } from "../../api/doctors.js";
+import { useAuth } from "../../hooks/useAuth.js";
 import { useDoctorAvailabilities } from "../../hooks/useDoctors.js";
 import { useGeo } from "../../hooks/useGeo.js";
 
@@ -274,6 +274,8 @@ export default function PatientHome() {
 }
 
 function DoctorCard({ doctor, userLocation }) {
+  const navigate = useNavigate();
+  const { user } = useAuth();
   // Extraction des vraies données depuis l'API avec fallbacks améliorés
   const doctorName = doctor?.name || doctor?.profile?.name || "Médecin";
   const specialty =
@@ -314,6 +316,26 @@ function DoctorCard({ doctor, userLocation }) {
   // Calculs dérivés
   const shortBio = bio.length > 80 ? bio.substring(0, 80) + "..." : bio;
   const hasRating = rating > 0;
+
+  // Fonctions pour gérer les clics avec vérification d'authentification
+  const handleProfileClick = (e) => {
+    if (!user) {
+      e.preventDefault();
+      navigate(`/login?redirect=/doctor/${doctor.id}`);
+      return;
+    }
+  };
+
+  const handleBookingClick = (e) => {
+    if (!user) {
+      e.preventDefault();
+      navigate(`/login?redirect=/booking/${doctor.id}`);
+      return;
+    }
+    if (!nextSlot) {
+      e.preventDefault();
+    }
+  };
 
   // Calcul de la distance si coordonnées disponibles
   const calculateDistance = (lat1, lng1, lat2, lng2) => {
@@ -501,7 +523,6 @@ function DoctorCard({ doctor, userLocation }) {
     const today = now.toISOString().slice(0, 10);
     const currentTime = now.getHours() * 100 + now.getMinutes(); // Format HHMM
 
-    // Parcourir les prochains jours (aujourd'hui inclus)
     const dates = Object.keys(availabilityData.slots).sort();
 
     for (const date of dates) {
@@ -518,40 +539,17 @@ function DoctorCard({ doctor, userLocation }) {
         });
       }
 
-      // Si on a des slots disponibles pour ce jour
       if (availableSlots.length > 0) {
-        const nextSlot = availableSlots[0];
+        const nextSlotTime = availableSlots[0];
         return {
           date,
-          time: nextSlot,
-          formatted: formatAvailability(date, nextSlot),
+          time: nextSlotTime,
+          formatted: `${nextSlotTime}`,
         };
       }
     }
 
     return null;
-  };
-
-  // Fonction pour formater l'affichage de la disponibilité
-  const formatAvailability = (date, time) => {
-    const now = new Date();
-    const slotDate = new Date(date);
-    const today = now.toISOString().slice(0, 10);
-    const tomorrow = new Date(now);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const tomorrowStr = tomorrow.toISOString().slice(0, 10);
-
-    let dateText = "";
-    if (date === today) {
-      dateText = "Aujourd'hui";
-    } else if (date === tomorrowStr) {
-      dateText = "Demain";
-    } else {
-      const options = { weekday: "short", day: "numeric", month: "short" };
-      dateText = slotDate.toLocaleDateString("fr-FR", options);
-    }
-
-    return `${dateText} à ${time}`;
   };
 
   // Calculer le prochain slot disponible
@@ -725,6 +723,7 @@ function DoctorCard({ doctor, userLocation }) {
         <Link
           className="btn-secondary flex-1 text-sm sm:text-base py-2 px-3 sm:px-4 transition-all duration-200 hover:scale-105 hover:shadow-md active:scale-95 hover:bg-slate-100 dark:hover:bg-slate-700 group"
           to={`/doctor/${doctor.id}`}
+          onClick={handleProfileClick}
           title="Voir le profil complet du médecin"
           aria-label={`Voir les détails de ${doctorName}`}
         >
@@ -738,12 +737,7 @@ function DoctorCard({ doctor, userLocation }) {
               : "bg-slate-300 dark:bg-slate-600 text-slate-500 dark:text-slate-400 cursor-not-allowed"
           }`}
           to={nextSlot ? `/booking/${doctor.id}` : "#"}
-          onClick={(e) => {
-            if (!nextSlot) {
-              e.preventDefault();
-              // Optionnel : afficher un message ou rediriger vers les détails
-            }
-          }}
+          onClick={handleBookingClick}
           title={
             nextSlot
               ? `Réserver un rendez-vous - Prochain créneau: ${nextSlot.formatted}`
