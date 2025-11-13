@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-vars */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { MapPin, Plus, Save, Star, X } from "lucide-react";
+import { MapPin, Save } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
 import { getDoctorProfile, updateDoctorProfile } from "../../api/doctors.js";
@@ -21,9 +21,13 @@ const useDoctorProfile = () => {
 };
 
 // Hook pour récupérer les spécialités disponibles
-const useSpecialties = () => {
-  // Pour l'instant, utilisons une liste statique de spécialités
-  // TODO: Remplacer par un appel API quand le backend sera disponible
+// NOTE: Supprimé car nous utilisons seulement primary_specialty maintenant
+
+export default function Profilpro() {
+  const queryClient = useQueryClient();
+  const { profile, isLoading: profileLoading } = useDoctorProfile();
+
+  // Liste statique des spécialités pour le select
   const specialties = [
     { id: 1, name: "Médecine générale" },
     { id: 2, name: "Cardiologie" },
@@ -37,14 +41,6 @@ const useSpecialties = () => {
     { id: 10, name: "Orthopédie" },
   ];
 
-  return { specialties, isLoading: false };
-};
-
-export default function Profilpro() {
-  const queryClient = useQueryClient();
-  const { profile, isLoading: profileLoading } = useDoctorProfile();
-  const { specialties, isLoading: specialtiesLoading } = useSpecialties();
-
   const [form, setForm] = useState({
     // Champs de doctor_profiles selon le schéma exact
     city: "",
@@ -53,31 +49,27 @@ export default function Profilpro() {
     fees: "",
     bio: "",
     primary_specialty: "",
-    specialty: "",
     professional_document: null,
   });
 
-  const [selectedSpecialties, setSelectedSpecialties] = useState([]);
   const [isUpdating, setIsUpdating] = useState(false);
 
   // Mettre à jour le formulaire quand les données arrivent
   useEffect(() => {
-    if (profile) {
+    if (profile && profile.doctor_profile) {
+      const doctorProfile = profile.doctor_profile;
       setForm({
-        city: profile.city || "",
-        address: profile.address || "",
-        phone: profile.phone || "",
-        fees: profile.fees || "",
-        bio: profile.bio || "",
-        primary_specialty: profile.primary_specialty || "",
-        specialty: profile.specialty || "",
-        professional_document: profile.professional_document || null,
+        city: doctorProfile.city || "",
+        address: doctorProfile.address || "",
+        phone: doctorProfile.fees || "",
+        fees: doctorProfile.fees || "",
+        bio: doctorProfile.bio || "",
+        primary_specialty: doctorProfile.primary_specialty || "",
+        professional_document: doctorProfile.professional_document || null,
       });
 
       // Charger les spécialités du médecin
-      if (profile.specialties) {
-        setSelectedSpecialties(profile.specialties.map((s) => s.id));
-      }
+      // Note: Les spécialités multiples ont été supprimées, seul primary_specialty est utilisé
     }
   }, [profile]);
 
@@ -129,21 +121,7 @@ export default function Profilpro() {
     },
   });
 
-  // Mutation pour mettre à jour les spécialités (désactivée pour l'instant)
-  // const updateSpecialtiesMutation = useMutation({
-  //   mutationFn: async (specialtyIds) => {
-  //     const token = localStorage.getItem("token");
-  //     const response = await fetch(
-  //       "http://127.0.0.1:8000/api/doctor/specialties",
-  //       {
-  //         method: "PUT",
-  //         headers: {
-  //           "Content-Type": "application/json",
-  //           Authorization: `Bearer ${token}`,
-  //         },
-  //         body: JSON.stringify({ specialty_ids: specialtyIds }),
-  //       }
-  //     );
+  // Note: La gestion des spécialités multiples a été supprimée
 
   //     if (!response.ok)
   //       throw new Error("Erreur lors de la mise à jour des spécialités");
@@ -182,11 +160,8 @@ export default function Profilpro() {
           form.primary_specialty === "" || form.primary_specialty == null
             ? null
             : String(form.primary_specialty),
-        specialty: (form.specialty || "").trim(),
         professional_document: form.professional_document,
-        // Inclure les spécialités sélectionnées pour la table doctor_specialty
-        specialties: selectedSpecialties,
-        specialty_ids: selectedSpecialties,
+        // Note: Les spécialités multiples ont été supprimées
       }; // Mettre à jour le profil
       await updateProfileMutation.mutateAsync(payload);
 
@@ -197,18 +172,6 @@ export default function Profilpro() {
     } finally {
       setIsUpdating(false);
     }
-  };
-
-  const addSpecialty = (specialtyId) => {
-    if (!selectedSpecialties.includes(specialtyId)) {
-      setSelectedSpecialties([...selectedSpecialties, specialtyId]);
-    }
-  };
-
-  const removeSpecialty = (specialtyId) => {
-    setSelectedSpecialties(
-      selectedSpecialties.filter((id) => id !== specialtyId)
-    );
   };
 
   if (profileLoading) {
@@ -318,7 +281,7 @@ export default function Profilpro() {
               >
                 <option value="">Sélectionner une spécialité</option>
                 {specialties.map((specialty) => (
-                  <option key={specialty.id} value={specialty.id}>
+                  <option key={specialty.id} value={specialty.name}>
                     {specialty.name}
                   </option>
                 ))}
@@ -340,19 +303,6 @@ export default function Profilpro() {
 
             <div>
               <label className="block text-sm font-medium mb-1">
-                Spécialité (texte libre)
-              </label>
-              <input
-                type="text"
-                value={form.specialty}
-                onChange={(e) => update("specialty", e.target.value)}
-                className="input-field"
-                placeholder="Ex: Cardiologie, Pédiatrie..."
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-1">
                 Document professionnel
               </label>
               <input
@@ -368,66 +318,6 @@ export default function Profilpro() {
                   Fichier sélectionné: {form.professional_document.name}
                 </p>
               )}
-            </div>
-          </div>
-        </div>
-
-        {/* Section Spécialités */}
-        <div className="card">
-          <h2 className="text-lg font-medium mb-4">Spécialités médicales</h2>
-
-          {/* Spécialités sélectionnées */}
-          <div className="mb-4">
-            <h3 className="text-sm font-medium mb-2">
-              Spécialités sélectionnées :
-            </h3>
-            <div className="flex flex-wrap gap-2">
-              {selectedSpecialties.map((specialtyId) => {
-                const specialty = specialties.find((s) => s.id === specialtyId);
-                return (
-                  <div
-                    key={specialtyId}
-                    className="flex items-center gap-2 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-3 py-1 rounded-full text-sm"
-                  >
-                    <Star className="h-3 w-3" />
-                    {specialty?.name || `Spécialité ${specialtyId}`}
-                    <button
-                      onClick={() => removeSpecialty(specialtyId)}
-                      className="hover:bg-blue-200 dark:hover:bg-blue-800 rounded-full p-0.5"
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
-                  </div>
-                );
-              })}
-              {selectedSpecialties.length === 0 && (
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Aucune spécialité sélectionnée
-                </p>
-              )}
-            </div>
-          </div>
-
-          {/* Ajouter des spécialités */}
-          <div>
-            <h3 className="text-sm font-medium mb-2">
-              Ajouter une spécialité :
-            </h3>
-            <div className="flex flex-wrap gap-2">
-              {specialties
-                .filter(
-                  (specialty) => !selectedSpecialties.includes(specialty.id)
-                )
-                .map((specialty) => (
-                  <button
-                    key={specialty.id}
-                    onClick={() => addSpecialty(specialty.id)}
-                    className="flex items-center gap-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 px-3 py-1 rounded-full text-sm transition-colors"
-                  >
-                    <Plus className="h-3 w-3" />
-                    {specialty.name}
-                  </button>
-                ))}
             </div>
           </div>
         </div>

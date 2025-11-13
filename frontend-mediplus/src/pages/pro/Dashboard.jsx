@@ -652,16 +652,7 @@ export default function ProDashboard() {
                     Spécialité principale
                   </span>
                   <p className="text-slate-900 dark:text-slate-100">
-                    {profile.primary_specialty_name || "Non défini"}
-                  </p>
-                </div>
-
-                <div>
-                  <span className="text-sm font-medium text-slate-500 dark:text-slate-400">
-                    Spécialité (détail)
-                  </span>
-                  <p className="text-slate-900 dark:text-slate-100">
-                    {profile.specialty || "Non défini"}
+                    {profile.primary_specialty || "Non défini"}
                   </p>
                 </div>
 
@@ -732,21 +723,16 @@ export default function ProDashboard() {
                 </div>
               )}
 
-              {/* Spécialités */}
-              {profile.specialties && profile.specialties.length > 0 && (
+              {/* Spécialité principale */}
+              {profile.primary_specialty && (
                 <div className="md:col-span-2">
                   <span className="text-sm font-medium text-slate-500 dark:text-slate-400">
-                    Spécialités
+                    Spécialité
                   </span>
                   <div className="flex flex-wrap gap-2 mt-1">
-                    {profile.specialties.map((specialty, index) => (
-                      <span
-                        key={index}
-                        className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300"
-                      >
-                        {specialty.name}
-                      </span>
-                    ))}
+                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300">
+                      {profile.primary_specialty}
+                    </span>
                   </div>
                 </div>
               )}

@@ -213,7 +213,10 @@ export default function PatientHome() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-semibold">Près de moi</h2>
-            <Link to="/search" className="text-sm text-cyan-600">
+            <Link
+              to="/search?show_all_doctors=true"
+              className="text-sm text-cyan-600"
+            >
               Voir tout
             </Link>
           </div>

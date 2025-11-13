@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\DoctorProfile;
-use App\Models\Specialty;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -24,7 +23,6 @@ class DoctorController extends Controller
         $sortBy = $request->input('sort_by', 'name');
         $sortOrder = $request->input('sort_order', 'asc');
         $city = $request->input('city');
-        $specialty = $request->input('specialty');
         $hasProfile = $request->input('has_profile', true);
 
         // Validation des paramètres de tri
@@ -96,11 +94,10 @@ class DoctorController extends Controller
                     'fees' => $profile->fees,
                     'rating' => $profile->rating,
                     'primary_specialty' => $profile->primary_specialty,
-                    'specialty' => $profile->specialty,
                     'professional_document' => $profile->professional_document,
                     'phone' => $profile->phone,
                 ] : null,
-                'specialties' => $profile ? [$profile->specialty] : [],
+                'specialties' => [],
                 'member_since' => $doctor->created_at->format('Y-m-d'),
                 'has_complete_profile' => (bool) $profile,
             ];
@@ -120,7 +117,6 @@ class DoctorController extends Controller
                 ],
                 'filters' => [
                     'city' => $city,
-                    'specialty' => $specialty,
                     'has_profile' => $hasProfile,
                 ],
                 'sorting' => [
@@ -136,7 +132,6 @@ class DoctorController extends Controller
     public function search(Request $request)
     {
         $q = $request->input('q');
-        $specialty = $request->input('specialty');
         $city = $request->input('city');
 
         $doctors = User::query()
@@ -148,12 +143,6 @@ class DoctorController extends Controller
                         $qq->where('bio', 'like', "%$q%")
                             ->orWhere('address', 'like', "%$q%");
                     });
-            })
-            ->when($specialty, function ($qry) use ($specialty) {
-                $qry->whereHas('doctorProfile', function ($qq) use ($specialty) {
-                    $qq->where('primary_specialty', 'like', "%$specialty%")
-                        ->orWhere('specialty', 'like', "%$specialty%");
-                });
             })
             ->when($city, function ($qry) use ($city) {
                 $qry->whereHas('doctorProfile', fn($qq) => $qq->where('city', 'like', "%$city%"));
@@ -194,7 +183,6 @@ class DoctorController extends Controller
                 'fees' => 'nullable|numeric|min:0',
                 'bio' => 'nullable|string|max:4000',
                 'primary_specialty' => 'nullable|string|max:120',
-                'specialty' => 'nullable|string|max:120',
                 'professional_document' => 'nullable|string|max:255',
                 'specialties' => 'nullable|array', // ex: ["Cardiologie","Dermatologie"]
             ]);
@@ -213,7 +201,6 @@ class DoctorController extends Controller
             'fees' => $data['fees'] ?? 0,
             'bio' => $data['bio'] ?? null,
             'primary_specialty' => $data['primary_specialty'] ?? null,
-            'specialty' => $data['specialty'] ?? null,
             'professional_document' => $data['professional_document'] ?? null,
         ]);
 
@@ -235,7 +222,6 @@ class DoctorController extends Controller
                 'bio' => 'nullable|string|max:4000',
                 'primary_specialty' => 'nullable|string|max:120',
                 'rating' => 'nullable|numeric|min:0|max:5',
-                'specialty' => 'nullable|string|max:120',
                 'professional_document' => 'nullable|string|max:255',
                 'specialties' => 'nullable|array',
             ]);
@@ -256,7 +242,6 @@ class DoctorController extends Controller
                 'bio' => $data['bio'] ?? null,
                 'primary_specialty' => $data['primary_specialty'] ?? null,
                 'rating' => $data['rating'] ?? 0,
-                'specialty' => $data['specialty'] ?? null,
                 'professional_document' => $data['professional_document'] ?? null,
             ]
         );

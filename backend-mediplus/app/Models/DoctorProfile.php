@@ -16,7 +16,6 @@ class DoctorProfile extends Model
         'bio',
         'rating',
         'primary_specialty',
-        'specialty',
         'professional_document',
     ];
 

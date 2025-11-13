@@ -158,7 +158,7 @@ class AvailabilityController extends Controller
             'doctor' => [
                 'id' => $doctor->id,
                 'name' => $doctor->name,
-                'specialty' => $doctor->doctorProfile?->specialty ?? $doctor->doctorProfile?->primary_specialty ?? 'Médecine générale',
+                'specialty' => $doctor->doctorProfile?->primary_specialty ?? 'Médecine générale',
                 'fees' => $doctor->doctorProfile?->fees ?? 0
             ],
             'slots' => $slots

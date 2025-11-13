@@ -1,7 +1,7 @@
 import { create } from "zustand";
 
 export const useAppointmentStore = create((set) => ({
-  doctor: null, // { id, name, specialty, fees }
+  doctor: null, // { id, name, primary_specialty, fees }
   selection: null, // { date: Date, time: 'HH:mm' }
   mode: "presentiel", // 'presentiel' | 'teleconsult' | 'professionnel'
   setDoctor: (doctor) => set({ doctor }),

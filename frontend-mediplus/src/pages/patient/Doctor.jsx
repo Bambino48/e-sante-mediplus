@@ -38,9 +38,7 @@ export default function Doctor() {
         id: data.doctor.id,
         name: data.doctor.name || "Dr. Nom Inconnu",
         specialty:
-          data.doctor.doctor_profile?.specialty ||
-          data.doctor.doctor_profile?.primary_specialty ||
-          "Médecine générale",
+          data.doctor.doctor_profile?.primary_specialty || "Médecine générale",
         experience: data.doctor.experience_years || 5,
         address:
           data.doctor.doctor_profile?.address || "Adresse non disponible",

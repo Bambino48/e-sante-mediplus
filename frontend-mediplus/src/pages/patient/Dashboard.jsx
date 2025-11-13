@@ -40,8 +40,7 @@ function DoctorCard({ doctor }) {
     doctor.name ||
     `Dr. ${doctor.first_name || ""} ${doctor.last_name || ""}`.trim() ||
     "Docteur";
-  const specialty =
-    doctor.primary_specialty || doctor.specialty || "Médecine générale";
+  const specialty = doctor.primary_specialty || "Médecine générale";
   const rating = doctor.rating || 4.5;
   const fee = doctor.fees || doctor.consultation_fee || 15000;
   const bio = doctor.bio || "";
