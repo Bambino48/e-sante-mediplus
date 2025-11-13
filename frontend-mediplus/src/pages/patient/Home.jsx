@@ -201,8 +201,21 @@ export default function PatientHome() {
               animate={{ opacity: 1, scale: 1 }}
               className="relative"
             >
-              <div className="aspect-4/3 rounded-3xl bg-linear-to-br from-cyan-100 to-teal-100 dark:from-cyan-900/30 dark:to-teal-900/20 border border-slate-200 dark:border-slate-800 shadow-inner" />
-              <div className="absolute inset-6 rounded-3xl border border-dashed border-cyan-300/50 dark:border-cyan-700/40" />
+              <div className="aspect-4/3 rounded-3xl bg-linear-to-br from-cyan-100 to-teal-100 dark:from-cyan-900/30 dark:to-teal-900/20 border border-slate-200 dark:border-slate-800 shadow-inner overflow-hidden">
+                <img
+                  src="https://images.unsplash.com/photo-1612277795421-9bc7706a4a34?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80"
+                  alt="Téléconsultation médicale moderne et accessible"
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                />
+                <div className="absolute inset-0 bg-linear-to-t from-black/20 to-transparent" />
+                <div className="absolute bottom-4 left-4 right-4">
+                  <p className="text-white text-sm font-medium">
+                    Soins de santé accessibles à tous
+                  </p>
+                </div>
+              </div>
+              <div className="absolute inset-6 rounded-3xl border border-dashed border-cyan-300/50 dark:border-cyan-700/40 pointer-events-none" />
             </motion.div>
           </div>
         </div>
