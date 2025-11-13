@@ -9,6 +9,7 @@ import {
   Heart,
   MapPin,
   Search,
+  Shield,
   Star,
   Stethoscope,
   User,
@@ -121,7 +122,19 @@ export default function PatientHome() {
                   en quelques clics
                 </span>
               </motion.h1>
-              <p className="mt-4 text-slate-600 dark:text-slate-300 max-w-xl">
+              {/* Badge de confiance */}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.2 }}
+                className="mt-6 mb-4"
+              >
+                <span className="inline-flex items-center px-4 py-2 rounded-full text-sm bg-green-100 text-green-800 border border-green-200 dark:bg-green-900/20 dark:text-green-200 dark:border-green-800">
+                  <Shield className="w-4 h-4 mr-2" />
+                  Plateforme certifiée & sécurisée
+                </span>
+              </motion.div>
+              <p className="text-xl text-slate-600 dark:text-slate-300 max-w-2xl leading-relaxed">
                 Plateforme e‑Santé intelligente pour patients et professionnels
                 : RDV, téléconsultation, ordonnances numériques et rappels
                 médicaments.
@@ -169,12 +182,12 @@ export default function PatientHome() {
                   <div className="flex gap-2">
                     <button
                       type="submit"
-                      className="btn-primary flex-1"
+                      className="bg-linear-to-r from-cyan-500 to-teal-500 hover:from-cyan-600 hover:to-teal-600 text-white font-bold py-3 px-6 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 text-base flex-1 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none"
                       disabled={
                         !searchQuery.trim() && !locationQuery.trim() && !coords
                       }
                     >
-                      Rechercher
+                      🔍 Trouver un médecin
                     </button>
                   </div>
                 </div>
@@ -216,6 +229,106 @@ export default function PatientHome() {
                 </div>
               </div>
               <div className="absolute inset-6 rounded-3xl border border-dashed border-cyan-300/50 dark:border-cyan-700/40 pointer-events-none" />
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* Trust indicators */}
+      <section className="py-16 bg-slate-50 dark:bg-slate-900/50">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-12"
+          >
+            <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-4">
+              Ils nous font confiance
+            </h2>
+            <p className="text-slate-600 dark:text-slate-300 max-w-2xl mx-auto">
+              Des milliers de patients trouvent chaque jour les soins dont ils
+              ont besoin grâce à notre plateforme
+            </p>
+          </motion.div>
+
+          <div className="grid md:grid-cols-4 gap-8">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.1 }}
+              className="text-center"
+            >
+              <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-700">
+                <div className="text-4xl font-bold text-cyan-600 mb-2">
+                  5000+
+                </div>
+                <div className="text-slate-600 dark:text-slate-300 font-medium">
+                  Patients soignés
+                </div>
+                <div className="text-sm text-slate-500 mt-1">Ce mois-ci</div>
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.2 }}
+              className="text-center"
+            >
+              <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-700">
+                <div className="text-4xl font-bold text-green-600 mb-2">
+                  98%
+                </div>
+                <div className="text-slate-600 dark:text-slate-300 font-medium">
+                  Satisfaction
+                </div>
+                <div className="text-sm text-slate-500 mt-1">
+                  Taux de recommandation
+                </div>
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.3 }}
+              className="text-center"
+            >
+              <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-700">
+                <div className="text-4xl font-bold text-teal-600 mb-2">
+                  24/7
+                </div>
+                <div className="text-slate-600 dark:text-slate-300 font-medium">
+                  Support
+                </div>
+                <div className="text-sm text-slate-500 mt-1">
+                  Disponible en permanence
+                </div>
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.4 }}
+              className="text-center"
+            >
+              <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-700">
+                <div className="text-4xl font-bold text-purple-600 mb-2">
+                  150+
+                </div>
+                <div className="text-slate-600 dark:text-slate-300 font-medium">
+                  Médecins
+                </div>
+                <div className="text-sm text-slate-500 mt-1">
+                  Partenaires certifiés
+                </div>
+              </div>
             </motion.div>
           </div>
         </div>
