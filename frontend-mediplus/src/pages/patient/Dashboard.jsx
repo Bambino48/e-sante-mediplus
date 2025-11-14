@@ -15,6 +15,7 @@ import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import { getDoctorsList } from "../../api/doctors.js";
+import DoctorCard from "../../components/DoctorCard.jsx";
 import DoctorCarousel from "../../components/DoctorCarousel";
 import PatientMedicalProfile from "../../components/PatientMedicalProfile";
 import { useAuth } from "../../hooks/useAuth";
@@ -24,6 +25,7 @@ import {
   useTodayMedications,
   useUnreadNotifications,
 } from "../../hooks/useDashboard.js";
+import { useGeo } from "../../hooks/useGeo";
 import {
   usePatientActivePrescriptions,
   usePatientActiveTeleconsults,
@@ -32,176 +34,6 @@ import {
   usePatientTodayMedications,
   usePatientUpcomingAppointments,
 } from "../../hooks/usePatientDashboard.js";
-
-// Carte docteur améliorée avec vraies données
-function DoctorCard({ doctor }) {
-  // Utilisation des vraies données de doctor_profiles
-  const doctorName =
-    doctor.name ||
-    `Dr. ${doctor.first_name || ""} ${doctor.last_name || ""}`.trim() ||
-    "Docteur";
-  const specialty = doctor.primary_specialty || "Médecine générale";
-  const rating = doctor.rating || 4.5;
-  const fee = doctor.fees || doctor.consultation_fee || 15000;
-  const bio = doctor.bio || "";
-  const address = doctor.address || doctor.city || "";
-  const phone = doctor.phone || "";
-  const nextSlot = doctor.next_availability || "Sur RDV";
-  const distance = doctor.distance_km ? `${doctor.distance_km} km` : "";
-  const experience = doctor.experience_years || doctor.years_experience;
-
-  // Badge color based on specialty
-  const getSpecialtyColor = (specialty) => {
-    const colors = {
-      "Médecine générale": "from-blue-500 to-cyan-500",
-      Cardiologie: "from-red-500 to-pink-500",
-      Dermatologie: "from-purple-500 to-violet-500",
-      Ophtalmologie: "from-green-500 to-emerald-500",
-      Pédiatrie: "from-yellow-500 to-orange-500",
-      Gynécologie: "from-rose-500 to-pink-500",
-      Psychiatrie: "from-indigo-500 to-purple-500",
-    };
-    return colors[specialty] || "from-cyan-500 to-teal-500";
-  };
-
-  const specialtyColor = getSpecialtyColor(specialty);
-
-  return (
-    <motion.div
-      whileHover={{ y: -4, scale: 1.02 }}
-      whileTap={{ scale: 0.98 }}
-      transition={{ duration: 0.2 }}
-      className="group relative bg-white dark:bg-slate-900 rounded-2xl shadow-sm hover:shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden transition-all duration-300"
-    >
-      {/* Header avec gradient subtil */}
-      <div
-        className={`h-20 bg-linear-to-r ${specialtyColor} opacity-5 group-hover:opacity-10 transition-opacity duration-300`}
-      />
-
-      {/* Avatar et informations principales */}
-      <div className="relative px-4 pb-4">
-        <div className="flex items-start gap-3 -mt-8">
-          {/* Avatar */}
-          <motion.div whileHover={{ scale: 1.05 }} className="relative">
-            <div className="w-16 h-16 bg-white dark:bg-slate-800 rounded-xl shadow-lg flex items-center justify-center border-2 border-white dark:border-slate-700">
-              <div
-                className={`w-14 h-14 bg-linear-to-r ${specialtyColor} rounded-lg flex items-center justify-center`}
-              >
-                <Stethoscope className="h-7 w-7 text-white" />
-              </div>
-            </div>
-            {/* Badge de disponibilité */}
-            <div className="absolute -top-1 -right-1 w-5 h-5 bg-green-500 rounded-full border-2 border-white dark:border-slate-800 flex items-center justify-center">
-              <div className="w-2 h-2 bg-white rounded-full"></div>
-            </div>
-          </motion.div>
-
-          {/* Informations */}
-          <div className="flex-1 min-w-0 pt-2">
-            <h3 className="font-semibold text-slate-900 dark:text-slate-100 truncate">
-              {doctorName}
-            </h3>
-
-            {/* Badge spécialité */}
-            <div
-              className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-linear-to-r ${specialtyColor} text-white mt-1`}
-            >
-              <Heart className="h-3 w-3" />
-              {specialty}
-            </div>
-
-            {/* Rating et expérience */}
-            <div className="flex items-center gap-3 mt-2 text-sm text-slate-600 dark:text-slate-400">
-              <div className="flex items-center gap-1">
-                <span className="text-yellow-500">⭐</span>
-                <span className="font-medium">{rating.toFixed(1)}</span>
-              </div>
-              {experience && (
-                <div className="flex items-center gap-1">
-                  <Clock className="h-3 w-3" />
-                  <span>{experience} ans exp.</span>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Détails supplémentaires */}
-        <div className="mt-4 space-y-2">
-          <div className="flex items-center justify-between text-sm">
-            <div className="flex items-center gap-1 text-slate-600 dark:text-slate-400">
-              <Clock className="h-4 w-4" />
-              <span>Prochaine dispo: {nextSlot}</span>
-            </div>
-            <div className="font-semibold text-cyan-600 dark:text-cyan-400">
-              {fee.toLocaleString()} FCFA
-            </div>
-          </div>
-
-          {distance && (
-            <div className="flex items-center gap-1 text-sm text-slate-500 dark:text-slate-400">
-              <svg
-                className="h-4 w-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                />
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                />
-              </svg>
-              <span>{distance}</span>
-            </div>
-          )}
-        </div>
-
-        {/* Boutons d'action */}
-        <div className="mt-4 flex gap-2">
-          <motion.a
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            href={`/doctor/${doctor.id}`}
-            className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors duration-200"
-          >
-            <svg
-              className="h-4 w-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-            Détails
-          </motion.a>
-
-          <motion.a
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            href={`/booking/${doctor.id}`}
-            className={`flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-white bg-linear-to-r ${specialtyColor} hover:shadow-lg rounded-lg transition-all duration-200`}
-          >
-            <CalendarDays className="h-4 w-4" />
-            Réserver
-          </motion.a>
-        </div>
-      </div>
-    </motion.div>
-  );
-}
 
 export default function PatientDashboard() {
   // État local pour gérer les docteurs
@@ -251,6 +83,7 @@ export default function PatientDashboard() {
 
   // ✅ Vérification de l'authentification
   const { user } = useAuth();
+  const { userLocation } = useGeo();
   const isAuthenticated = !!user;
 
   // ✅ Récupération des données en temps réel (désactivées si non authentifié)
@@ -1307,7 +1140,13 @@ export default function PatientDashboard() {
           <DoctorCarousel
             doctors={doctors}
             title="Nos médecins recommandés"
-            renderCard={(doctor) => <DoctorCard doctor={doctor} />}
+            renderCard={(doctor) => (
+              <DoctorCard
+                doctor={doctor}
+                user={user}
+                userLocation={userLocation}
+              />
+            )}
           />
         ) : (
           <div className="text-center py-8">
