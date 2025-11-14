@@ -2,7 +2,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import Navbar from "../components/Navbar.jsx"; // ✅ ajouté
 
 // 🩺 Pages Patient
-import PatientDashboard from "../pages/patient/Dashboard.jsx";
+import DashboardContainer from "../pages/patient/DashboardContainer.jsx";
 import PatientHome from "../pages/patient/Home.jsx";
 import Profile from "../pages/patient/Profile.jsx";
 
@@ -43,6 +43,8 @@ import About from "../pages/static/About.jsx";
 import Contact from "../pages/static/Contact.jsx";
 import Pricing from "../pages/static/Pricing.jsx";
 
+// 🔧 Containers
+
 export default function AppRouter() {
   return (
     <>
@@ -74,7 +76,7 @@ export default function AppRouter() {
           path="/patient/dashboard"
           element={
             <ProtectedRoute roles={["patient"]}>
-              <PatientDashboard />
+              <DashboardContainer />
             </ProtectedRoute>
           }
         />

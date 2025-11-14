@@ -187,4 +187,13 @@ class MedicationController extends Controller
             'medications' => $medications
         ]);
     }
+
+    /**
+     * GET /api/patient/medications/today
+     * Récupérer les médicaments du jour pour le patient connecté (alias de today())
+     */
+    public function patientToday(Request $request)
+    {
+        return $this->today($request);
+    }
 }

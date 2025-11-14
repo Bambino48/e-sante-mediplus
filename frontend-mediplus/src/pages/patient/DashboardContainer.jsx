@@ -15,7 +15,14 @@ import Triage from "./Triage.jsx";
 export default function DashboardContainer() {
   const [activeView, setActiveView] = useState("dashboard");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { sidebarOpen } = useUIStore();
+  const { sidebarOpen, setSidebar } = useUIStore();
+
+  // La sidebar peut maintenant être réduite/agrandie par l'utilisateur
+  // useEffect(() => {
+  //   if (!sidebarOpen) {
+  //     setSidebar(true);
+  //   }
+  // }, [sidebarOpen, setSidebar]);
 
   const handleViewChange = (view) => {
     setActiveView(view);
@@ -57,9 +64,9 @@ export default function DashboardContainer() {
         />
       )}
 
-      {/* ✅ Sidebar avec gestion mobile */}
+      {/* ✅ Sidebar toujours visible sur desktop, gère sa propre largeur */}
       <div
-        className={`fixed md:relative inset-y-0 left-0 z-40 transform transition-transform duration-300 ease-in-out ${
+        className={`fixed md:static inset-y-0 left-0 z-40 transform transition-transform duration-300 ease-in-out ${
           mobileMenuOpen ? "translate-x-0" : "-translate-x-full"
         } md:translate-x-0`}
       >
@@ -72,11 +79,7 @@ export default function DashboardContainer() {
       </div>
 
       {/* ✅ Zone principale dynamique avec padding pour le bouton hamburger mobile */}
-      <main
-        className={`flex-1 p-6 pt-20 md:pt-6 overflow-y-auto transition-all duration-300 ${
-          sidebarOpen ? "md:ml-0" : "md:ml-0"
-        }`}
-      >
+      <main className="flex-1 p-6 pt-20 md:pt-6 overflow-y-auto transition-all duration-300">
         {views[activeView] || <PatientDashboard />}
       </main>
     </div>

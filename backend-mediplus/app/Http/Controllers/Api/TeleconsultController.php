@@ -46,4 +46,26 @@ class TeleconsultController extends Controller
         $room->update(['status' => 'ended', 'ended_at' => now()]);
         return response()->json(['message' => 'Session terminée']);
     }
+
+    /**
+     * GET /api/patient/teleconsults/active
+     * Liste des téléconsultations actives pour le patient
+     */
+    public function active(Request $request)
+    {
+        $user = $request->user();
+        if (!$user->isPatient()) {
+            return response()->json(['message' => 'Accès refusé'], 403);
+        }
+
+        $activeTeleconsults = TeleconsultRoom::where('patient_id', $user->id)
+            ->where('status', 'active')
+            ->with('doctor')
+            ->get();
+
+        return response()->json([
+            'message' => 'Téléconsultations actives récupérées avec succès',
+            'teleconsults' => $activeTeleconsults
+        ]);
+    }
 }

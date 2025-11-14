@@ -78,26 +78,33 @@ export default function Sidebar({
   return (
     <aside
       className={`relative flex flex-col justify-between bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 shadow-sm transition-all duration-300 ${
-        sidebarOpen ? "w-64" : "w-16"
+        sidebarOpen ? "min-w-64 w-64" : "w-20"
       } ${className}`}
     >
       {/* === Haut : Photo + navigation === */}
       <div className="p-3 flex flex-col flex-1 overflow-y-auto">
-        {/* ✅ Photo (agrandie et masquée en mode réduit) */}
-        {sidebarOpen && (
-          <div className="flex flex-col items-center mb-8">
-            <div className="relative">
-              <img
-                src={photoUrl}
-                alt="Profil"
-                className="h-24 w-24 rounded-full object-cover border-4 border-cyan-500 shadow-lg transition-transform duration-300 hover:scale-105"
-              />
-            </div>
+        {/* ✅ Photo (toujours visible, mais adaptée à la taille) */}
+        <div className="flex flex-col items-center mb-8">
+          <div className="relative">
+            <img
+              src={photoUrl}
+              alt="Profil"
+              className={`rounded-full object-cover border-4 border-cyan-500 shadow-lg transition-all duration-300 hover:scale-105 ${
+                sidebarOpen ? "h-24 w-24" : "h-12 w-12"
+              }`}
+              onError={(e) => {
+                console.log("Erreur chargement photo:", photoUrl);
+                e.target.src =
+                  "https://cdn-icons-png.flaticon.com/512/847/847969.png";
+              }}
+            />
+          </div>
+          {sidebarOpen && (
             <p className="mt-3 text-sm font-medium text-slate-700 dark:text-slate-200 text-center truncate max-w-40">
               {user?.name || "Utilisateur"}
             </p>
-          </div>
-        )}
+          )}
+        </div>
 
         {/* ✅ Navigation */}
         <nav className="space-y-4">
@@ -122,7 +129,9 @@ export default function Sidebar({
                         title={it.label}
                       >
                         <span className="text-lg">{it.icon}</span>
-                        {sidebarOpen && <span>{it.label}</span>}
+                        <span className={`${sidebarOpen ? "" : "hidden"}`}>
+                          {it.label}
+                        </span>
                       </button>
                     );
                   }
@@ -137,7 +146,9 @@ export default function Sidebar({
                       title={it.label}
                     >
                       <span className="text-lg">{it.icon}</span>
-                      {sidebarOpen && <span>{it.label}</span>}
+                      <span className={`${sidebarOpen ? "" : "hidden"}`}>
+                        {it.label}
+                      </span>
                     </div>
                   ) : (
                     <NavLink
@@ -153,7 +164,9 @@ export default function Sidebar({
                       title={it.label}
                     >
                       <span className="text-lg">{it.icon}</span>
-                      {sidebarOpen && <span>{it.label}</span>}
+                      <span className={`${sidebarOpen ? "" : "hidden"}`}>
+                        {it.label}
+                      </span>
                     </NavLink>
                   );
                 })}
@@ -163,12 +176,12 @@ export default function Sidebar({
         </nav>
       </div>
 
-      {/* === Bas : Bouton réduire/agrandir toujours visible === */}
+      {/* === Bas : Bouton réduire/agrandir la sidebar === */}
       <div className="sticky bottom-0 left-0 w-full p-3 border-t border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm">
         <button
           onClick={toggleSidebar}
           className="w-full flex items-center justify-center rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 p-2 transition"
-          title={sidebarOpen ? "Réduire" : "Ouvrir"}
+          title={sidebarOpen ? "Réduire la sidebar" : "Agrandir la sidebar"}
         >
           {sidebarOpen ? (
             <ChevronLeft className="h-5 w-5 text-slate-600 dark:text-slate-300" />

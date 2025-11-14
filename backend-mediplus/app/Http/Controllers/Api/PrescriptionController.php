@@ -51,4 +51,26 @@ class PrescriptionController extends Controller
         // Simulation (dans la version finale tu génères un PDF)
         return response()->json(['message' => 'PDF prêt', 'file' => '/storage/prescriptions/' . $prescription->id . '.pdf']);
     }
+
+    /**
+     * GET /api/patient/prescriptions/active
+     * Liste des prescriptions actives pour le patient
+     */
+    public function active(Request $request)
+    {
+        $user = $request->user();
+        if (!$user->isPatient()) {
+            return response()->json(['message' => 'Accès refusé'], 403);
+        }
+
+        // Pour l'instant, retourner toutes les prescriptions (TODO: ajouter colonne status)
+        $activePrescriptions = Prescription::where('patient_id', $user->id)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return response()->json([
+            'message' => 'Prescriptions récupérées avec succès',
+            'prescriptions' => $activePrescriptions
+        ]);
+    }
 }

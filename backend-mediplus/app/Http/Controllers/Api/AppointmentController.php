@@ -175,4 +175,28 @@ class AppointmentController extends Controller
             'appointment' => $appointment->load('doctor')
         ]);
     }
+
+    /**
+     * GET /api/patient/appointments/upcoming
+     * Liste des rendez-vous à venir pour le patient
+     */
+    public function upcoming(Request $request)
+    {
+        $user = $request->user();
+        if (!$user->isPatient()) {
+            return response()->json(['message' => 'Accès refusé'], 403);
+        }
+
+        $upcomingAppointments = Appointment::where('patient_id', $user->id)
+            ->where('scheduled_at', '>', now())
+            ->where('status', '!=', 'cancelled')
+            ->with('doctor')
+            ->orderBy('scheduled_at', 'asc')
+            ->get();
+
+        return response()->json([
+            'message' => 'Rendez-vous à venir récupérés avec succès',
+            'appointments' => $upcomingAppointments
+        ]);
+    }
 }

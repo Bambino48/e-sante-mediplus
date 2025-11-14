@@ -130,6 +130,14 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/profile', [PatientProfileController::class, 'update']);
         Route::delete('/profile', [PatientProfileController::class, 'destroy']);
         Route::get('/consultations/recent', [ConsultationController::class, 'recent']);
+
+        // Routes manquantes pour le dashboard patient
+        Route::get('/stats', [PatientProfileController::class, 'stats']);
+        Route::get('/appointments/upcoming', [AppointmentController::class, 'upcoming']);
+        Route::get('/prescriptions/active', [PrescriptionController::class, 'active']);
+        Route::get('/teleconsults/active', [TeleconsultController::class, 'active']);
+        Route::get('/medications/today', [MedicationController::class, 'patientToday']);
+        Route::get('/payments/pending', [PaymentController::class, 'pending']);
     });
 });
 

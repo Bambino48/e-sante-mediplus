@@ -15,16 +15,29 @@ export default function Register() {
 
   const onSubmit = async (e) => {
     e.preventDefault();
-    const user = await register(form);
+    const result = await register(form);
 
-    // Vérifier le paramètre redirect dans l'URL
-    const urlParams = new URLSearchParams(location.search);
-    const redirectParam = urlParams.get("redirect");
+    // Si l'utilisateur est connecté automatiquement (token fourni)
+    if (result && !result.redirect_to) {
+      // Vérifier le paramètre redirect dans l'URL
+      const urlParams = new URLSearchParams(location.search);
+      const redirectParam = urlParams.get("redirect");
 
-    const redirect =
-      redirectParam ||
-      (user.role === "patient" ? "/patient/dashboard" : "/pro/dashboard");
-    navigate(redirect, { replace: true });
+      const redirect =
+        redirectParam ||
+        (result.role === "patient" ? "/patient/dashboard" : "/pro/dashboard");
+      navigate(redirect, { replace: true });
+    } else {
+      // Pas de connexion automatique - rediriger vers login
+      navigate("/login", {
+        replace: true,
+        state: {
+          message:
+            "Votre compte a été créé avec succès. Veuillez vous connecter.",
+          email: form.email,
+        },
+      });
+    }
   };
 
   return (

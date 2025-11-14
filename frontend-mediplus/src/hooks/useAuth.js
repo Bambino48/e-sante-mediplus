@@ -64,23 +64,37 @@ export function useAuth() {
           const cachedUser = localStorage.getItem("cachedUser");
           if (cachedUser) {
             try {
-              setUser(JSON.parse(cachedUser));
-              toast.success("Session restaurée à partir du cache local");
-            } catch {
-              // Si le cache est invalide, utiliser un utilisateur minimal
-              const fallbackUser = {
-                id: "temp",
-                email: "utilisateur@mediplus.com",
-                name: "Utilisateur",
-                role: "patient",
-              };
-              setUser(fallbackUser);
-              toast.warn("Session temporaire activée");
+              const parsedUser = JSON.parse(cachedUser);
+              // Vérifier que c'est un objet valide
+              if (
+                typeof parsedUser === "object" &&
+                parsedUser !== null &&
+                parsedUser.id
+              ) {
+                setUser(parsedUser);
+                toast.success("Session restaurée à partir du cache local");
+              } else {
+                // Cache invalide, supprimer
+                localStorage.removeItem("cachedUser");
+              }
+            } catch (error) {
+              // Cache corrompu, supprimer
+              console.warn(
+                "Cache utilisateur corrompu lors de la restauration:",
+                error
+              );
+              localStorage.removeItem("cachedUser");
             }
           } else {
-            toast.error(
-              "Erreur temporaire du serveur. Certaines fonctionnalités peuvent être limitées."
-            );
+            // Pas de cache disponible, créer un utilisateur temporaire
+            const fallbackUser = {
+              id: "temp",
+              email: "utilisateur@mediplus.com",
+              name: "Utilisateur",
+              role: "patient",
+            };
+            setUser(fallbackUser);
+            toast.warn("Session temporaire activée");
           }
         } else {
           toast.error(
@@ -135,16 +149,22 @@ export function useAuth() {
       setLoading(true);
       try {
         const res = await registerRequest(form);
+
+        // Si un token est fourni, connecter automatiquement l'utilisateur
         if (res.token) {
           localStorage.setItem("token", res.token);
+          // Cache les données utilisateur pour les erreurs serveur temporaires
+          if (res.user) {
+            localStorage.setItem("cachedUser", JSON.stringify(res.user));
+          }
+          setUser(res.user);
+          toast.success("Compte créé avec succès !");
+          return res.user;
+        } else {
+          // Pas de connexion automatique - rediriger vers login
+          toast.success("Compte créé avec succès ! Veuillez vous connecter.");
+          return { redirect_to: "login", user: res.user };
         }
-        // Cache les données utilisateur pour les erreurs serveur temporaires
-        if (res.user) {
-          localStorage.setItem("cachedUser", JSON.stringify(res.user));
-        }
-        setUser(res.user);
-        toast.success("Compte créé avec succès !");
-        return res.user;
       } catch (e) {
         toast.error(e.response?.data?.message || "Échec d'inscription");
         throw e;

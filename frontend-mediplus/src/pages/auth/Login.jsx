@@ -6,9 +6,15 @@ export default function Login() {
   const { login, isLoading, user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const [form, setForm] = useState({ email: "", password: "" });
+  const [form, setForm] = useState({
+    email: location.state?.email || "",
+    password: "",
+  });
   const [shouldRedirect, setShouldRedirect] = useState(false);
   const [redirectPath, setRedirectPath] = useState("");
+
+  // Récupérer le message depuis l'état de navigation
+  const successMessage = location.state?.message;
 
   const onSubmit = async (e) => {
     e.preventDefault();
@@ -43,6 +49,13 @@ export default function Login() {
   return (
     <div className="mx-auto max-w-md px-4 sm:px-6 lg:px-8 py-12">
       <h1 className="text-2xl font-semibold">Connexion</h1>
+
+      {successMessage && (
+        <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+          <p className="text-green-800 text-sm">{successMessage}</p>
+        </div>
+      )}
+
       <form onSubmit={onSubmit} className="mt-6 space-y-4">
         <input
           className="input"

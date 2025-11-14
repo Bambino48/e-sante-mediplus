@@ -60,4 +60,25 @@ class PaymentController extends Controller
             'paiements' => $payments
         ]);
     }
+
+    /**
+     * GET /api/patient/payments/pending
+     * Liste des paiements en attente pour le patient
+     */
+    public function pending(Request $request)
+    {
+        $user = $request->user();
+        if (!$user->isPatient()) {
+            return response()->json(['message' => 'Accès refusé'], 403);
+        }
+
+        $pendingPayments = Payment::where('patient_id', $user->id)
+            ->where('status', 'initiated')
+            ->get();
+
+        return response()->json([
+            'message' => 'Paiements en attente récupérés avec succès',
+            'payments' => $pendingPayments
+        ]);
+    }
 }

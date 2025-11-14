@@ -135,4 +135,33 @@ class PatientProfileController extends Controller
 
         return response()->json(['message' => 'Profil patient supprimé avec succès.']);
     }
+
+    /**
+     * 🔹 GET /api/patient/stats
+     * Statistiques du patient pour le dashboard
+     */
+    public function stats()
+    {
+        $user = Auth::user();
+
+        if ($user->role !== 'patient') {
+            return response()->json(['message' => 'Accès réservé aux patients.'], 403);
+        }
+
+        // Statistiques basiques du patient (à implémenter plus tard avec les vraies relations)
+        $stats = [
+            'total_appointments' => 0, // TODO: Implement with proper relationships
+            'upcoming_appointments' => 0,
+            'completed_appointments' => 0,
+            'total_prescriptions' => 0,
+            'active_prescriptions' => 0,
+            'account_created' => $user->created_at->format('Y-m-d'),
+            'last_login' => $user->updated_at->format('Y-m-d'),
+        ];
+
+        return response()->json([
+            'message' => 'Statistiques récupérées avec succès.',
+            'stats' => $stats
+        ], 200);
+    }
 }

@@ -30,12 +30,14 @@ class AuthController extends Controller
         $data['role'] = $data['role'] ?? 'patient';
 
         $user = User::create($data);
-        $token = $user->createToken('auth_token')->plainTextToken;
+
+        // NE PAS connecter automatiquement après l'inscription
+        // L'utilisateur doit se connecter manuellement
 
         return response()->json([
-            'message' => 'Inscription réussie',
+            'message' => 'Inscription réussie. Veuillez vous connecter.',
             'user' => $user,
-            'token' => $token,
+            'redirect_to' => 'login'
         ], 201);
     }
 
