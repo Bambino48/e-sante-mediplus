@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\StoreAppointmentRequest;
+use App\Http\Requests\UpdateAppointmentRequest;
 use App\Models\Appointment;
 use Illuminate\Http\Request;
 
@@ -43,29 +45,28 @@ class AppointmentController extends Controller
     }
 
     // POST /api/patient/appointments
-    public function store(Request $request)
+    public function store(StoreAppointmentRequest $request)
     {
         $user = $request->user();
         if (!$user->isPatient()) {
             return response()->json(['message' => 'Accès refusé'], 403);
         }
 
-        $data = $request->validate([
-            'doctor_id' => 'required|exists:users,id',
-            'scheduled_at' => 'required|date',
-            'reason' => 'nullable|string',
-            'mode' => 'required|in:presentiel,teleconsult,professionnel',
-        ]);
+        $validated = $request->validated();
 
         $appointment = Appointment::create([
             'patient_id' => $user->id,
-            'doctor_id' => $data['doctor_id'],
-            'scheduled_at' => $data['scheduled_at'],
-            'reason' => $data['reason'] ?? null,
-            'mode' => $data['mode'],
+            'doctor_id' => $validated['doctor_id'],
+            'scheduled_at' => $validated['scheduled_at'],
+            'reason' => $validated['reason'],
+            'mode' => $validated['mode'],
+            'duration' => $validated['duration'] ?? 30, // durée par défaut 30 minutes
         ]);
 
-        return response()->json(['message' => 'Rendez-vous réservé', 'appointment' => $appointment], 201);
+        return response()->json([
+            'message' => 'Rendez-vous réservé avec succès',
+            'appointment' => $appointment->load('doctor')
+        ], 201);
     }
 
     // POST /api/pro/appointments/{id}/confirm
@@ -120,7 +121,7 @@ class AppointmentController extends Controller
     }
 
     // PUT /api/patient/appointments/{id}
-    public function update(Request $request, $id)
+    public function update(UpdateAppointmentRequest $request, $id)
     {
         $user = $request->user();
         if (!$user->isPatient()) {
@@ -131,19 +132,20 @@ class AppointmentController extends Controller
             ->where('patient_id', $user->id)
             ->firstOrFail();
 
-        // Ne peut pas modifier un rendez-vous déjà terminé ou annulé
-        if (in_array($appointment->status, ['completed', 'cancelled'])) {
-            return response()->json(['message' => 'Impossible de modifier ce rendez-vous'], 422);
+        // Vérifier si le rendez-vous peut être modifié
+        if (!$appointment->canBeRescheduled()) {
+            return response()->json([
+                'message' => 'Ce rendez-vous ne peut plus être modifié'
+            ], 422);
         }
 
-        $data = $request->validate([
-            'scheduled_at' => 'sometimes|date|after:now',
-            'reason' => 'nullable|string',
+        $validated = $request->validated();
+        $appointment->update($validated);
+
+        return response()->json([
+            'message' => 'Rendez-vous modifié avec succès',
+            'appointment' => $appointment->load('doctor')
         ]);
-
-        $appointment->update($data);
-
-        return response()->json(['message' => 'Rendez-vous modifié', 'appointment' => $appointment]);
     }
 
     // DELETE /api/patient/appointments/{id}
@@ -158,18 +160,19 @@ class AppointmentController extends Controller
             ->where('patient_id', $user->id)
             ->firstOrFail();
 
-        // Ne peut pas annuler un rendez-vous déjà terminé
-        if ($appointment->status === 'completed') {
-            return response()->json(['message' => 'Impossible d\'annuler un rendez-vous terminé'], 422);
+        // Vérifier si le rendez-vous peut être annulé
+        if (!$appointment->canBeCancelled()) {
+            return response()->json([
+                'message' => 'Ce rendez-vous ne peut plus être annulé'
+            ], 422);
         }
 
-        // Ne peut pas annuler un rendez-vous déjà annulé
-        if ($appointment->status === 'cancelled') {
-            return response()->json(['message' => 'Ce rendez-vous est déjà annulé'], 422);
-        }
+        $reason = $request->input('cancellation_reason');
+        $appointment->cancel($reason);
 
-        $appointment->update(['status' => 'cancelled']);
-
-        return response()->json(['message' => 'Rendez-vous annulé', 'appointment' => $appointment]);
+        return response()->json([
+            'message' => 'Rendez-vous annulé avec succès',
+            'appointment' => $appointment->load('doctor')
+        ]);
     }
 }

@@ -3,15 +3,16 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   createDoctorAvailability,
   deleteDoctorAvailability,
-  getDoctorAvailabilities,
+  getDoctorAvailabilities as getDoctorAvailabilitiesFromDoctor,
   updateDoctorAvailability,
 } from "../api/doctor";
+import { getDoctorAvailabilities as getDoctorAvailabilitiesById } from "../api/doctors";
 
 // ✅ Hook pour récupérer les disponibilités du médecin
 export function useDoctorAvailabilities() {
   return useQuery({
     queryKey: ["doctor-availabilities"],
-    queryFn: getDoctorAvailabilities,
+    queryFn: getDoctorAvailabilitiesFromDoctor,
     staleTime: 30 * 1000, // Considéré frais pendant 30 secondes
     refetchInterval: 60 * 1000, // Rafraîchissement automatique toutes les 60 secondes
     refetchOnWindowFocus: true, // Rafraîchissement quand l'utilisateur revient sur l'onglet
@@ -77,5 +78,17 @@ export function useDeleteAvailability() {
       // Invalidation pour s'assurer de la fraîcheur des données
       queryClient.invalidateQueries(["doctor-availabilities"]);
     },
+  });
+}
+
+// ✅ Hook pour récupérer les disponibilités d'un médecin spécifique (pour les cartes de docteur)
+export function useDoctorAvailabilitiesById(doctorId) {
+  return useQuery({
+    queryKey: ["doctor-availabilities", doctorId],
+    queryFn: () => getDoctorAvailabilitiesById(doctorId),
+    enabled: !!doctorId, // Ne pas exécuter si doctorId est null/undefined
+    staleTime: 5 * 60 * 1000, // Considéré frais pendant 5 minutes
+    refetchOnWindowFocus: false, // Pas de refetch automatique au focus
+    refetchOnReconnect: false, // Pas de refetch à la reconnexion
   });
 }

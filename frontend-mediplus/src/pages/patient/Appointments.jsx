@@ -23,6 +23,33 @@ export default function Appointments() {
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const queryClient = useQueryClient();
 
+  // Fonction pour obtenir le libellé du statut
+  const getStatusLabel = (status) => {
+    const labels = {
+      pending: "En attente",
+      confirmed: "Confirmé",
+      cancelled: "Annulé",
+      completed: "Terminé",
+      no_show: "Absent",
+    };
+    return labels[status] || status;
+  };
+
+  // Fonction pour obtenir la couleur du statut
+  const getStatusColor = (status) => {
+    const colors = {
+      pending:
+        "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
+      confirmed:
+        "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
+      cancelled: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
+      completed:
+        "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
+      no_show: "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200",
+    };
+    return colors[status] || "bg-gray-100 text-gray-800";
+  };
+
   // ✅ Récupération des rendez-vous
   const { data, isLoading, error } = useQuery({
     queryKey: ["patient-appointments"],
@@ -218,21 +245,32 @@ function AppointmentCard({ appointment, onView, onCancel }) {
   const isPast = new Date(appointment.scheduled_at) < new Date();
   const date = new Date(appointment.scheduled_at);
 
-  const statusColors = {
-    confirmed:
-      "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-200",
-    pending:
-      "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-200",
-    cancelled: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-200",
-    completed:
-      "bg-slate-100 text-slate-800 dark:bg-slate-700 dark:text-slate-200",
+  // Fonction pour obtenir le libellé du statut
+  const getStatusLabel = (status) => {
+    const labels = {
+      pending: "En attente",
+      confirmed: "Confirmé",
+      cancelled: "Annulé",
+      completed: "Terminé",
+      no_show: "Absent",
+    };
+    return labels[status] || status;
   };
 
-  const statusLabels = {
-    confirmed: "Confirmé",
-    pending: "En attente",
-    cancelled: "Annulé",
-    completed: "Terminé",
+  // Fonction pour obtenir la couleur du statut
+  const getStatusColor = (status) => {
+    const colors = {
+      pending:
+        "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-200",
+      confirmed:
+        "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-200",
+      cancelled: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-200",
+      completed:
+        "bg-slate-100 text-slate-800 dark:bg-slate-700 dark:text-slate-200",
+      no_show:
+        "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-200",
+    };
+    return colors[status] || "bg-gray-100 text-gray-800";
   };
 
   return (
@@ -277,6 +315,11 @@ function AppointmentCard({ appointment, onView, onCancel }) {
                   hour: "2-digit",
                   minute: "2-digit",
                 })}
+                {appointment.duration && (
+                  <span className="text-slate-500 dark:text-slate-400 ml-1">
+                    ({appointment.duration} min)
+                  </span>
+                )}
               </span>
             </div>
           </div>
@@ -299,11 +342,11 @@ function AppointmentCard({ appointment, onView, onCancel }) {
           {/* Statut */}
           <div className="mt-3">
             <span
-              className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${
-                statusColors[appointment.status] || statusColors.pending
-              }`}
+              className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(
+                appointment.status
+              )}`}
             >
-              {statusLabels[appointment.status] || "En attente"}
+              {getStatusLabel(appointment.status)}
             </span>
           </div>
         </div>
