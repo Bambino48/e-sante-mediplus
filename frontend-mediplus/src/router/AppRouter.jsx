@@ -30,6 +30,7 @@ import Register from "../pages/auth/Register.jsx";
 import ProtectedRoute from "./ProtectedRoute.jsx";
 
 // 🔍 Fonctionnalités patient
+import Notifications from "../pages/notifications/Notifications.jsx";
 import Booking from "../pages/patient/Booking.jsx";
 import Checkout from "../pages/patient/Checkout.jsx";
 import Doctor from "../pages/patient/Doctor.jsx";
@@ -67,6 +68,14 @@ export default function AppRouter() {
         <Route
           path="/patient/prescriptions"
           element={<PatientPrescriptions />}
+        />
+        <Route
+          path="/notifications"
+          element={
+            <ProtectedRoute roles={["patient"]}>
+              <Notifications />
+            </ProtectedRoute>
+          }
         />
         <Route path="/checkout/:appointmentId" element={<Checkout />} />
         <Route path="/triage" element={<Triage />} />

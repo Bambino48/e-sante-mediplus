@@ -46,6 +46,10 @@ export default function PatientDashboard() {
   const [selectedDoctorForBooking, setSelectedDoctorForBooking] =
     useState(null);
 
+  // États pour les vues intégrées dans le dashboard
+  const [showPrescriptionsView, setShowPrescriptionsView] = useState(false);
+  const [showAppointmentView, setShowAppointmentView] = useState(false);
+
   // Liste des docteurs pour le carrousel (top 12, triés par note)
   const navigate = useNavigate();
 
@@ -383,21 +387,23 @@ export default function PatientDashboard() {
 
             {/* Actions rapides du jour */}
             <div className="mt-4 flex flex-wrap gap-2">
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => navigate("/patient/prescriptions")}
-                className="inline-flex items-center gap-2 px-3 py-2 bg-cyan-100 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-300 rounded-lg text-xs font-medium hover:bg-cyan-200 dark:hover:bg-cyan-900/50 transition-colors"
-              >
-                <Pill className="h-3 w-3" />
-                Voir médicaments
-              </motion.button>
-
-              {nextAppointmentData?.appointment && (
+              {isAuthenticated && (
                 <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  onClick={() => navigate("/booking")}
+                  onClick={() => setShowPrescriptionsView(true)}
+                  className="inline-flex items-center gap-2 px-3 py-2 bg-cyan-100 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-300 rounded-lg text-xs font-medium hover:bg-cyan-200 dark:hover:bg-cyan-900/50 transition-colors"
+                >
+                  <Pill className="h-3 w-3" />
+                  Voir médicaments
+                </motion.button>
+              )}
+
+              {isAuthenticated && nextAppointmentData?.appointment && (
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => setShowAppointmentView(true)}
                   className="inline-flex items-center gap-2 px-3 py-2 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 rounded-lg text-xs font-medium hover:bg-emerald-200 dark:hover:bg-emerald-900/50 transition-colors"
                 >
                   <CalendarDays className="h-3 w-3" />
@@ -405,7 +411,7 @@ export default function PatientDashboard() {
                 </motion.button>
               )}
 
-              {notificationsData?.count > 0 && (
+              {isAuthenticated && notificationsData?.count > 0 && (
                 <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
@@ -419,6 +425,140 @@ export default function PatientDashboard() {
             </div>
           </div>
         </motion.div>
+
+        {/* === Vue intégrée - Prescriptions === */}
+        {showPrescriptionsView && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="mb-8"
+          >
+            <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-cyan-100 dark:bg-cyan-900/50 rounded-xl flex items-center justify-center">
+                    <Pill className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                      Mes prescriptions
+                    </h2>
+                    <p className="text-sm text-slate-600 dark:text-slate-400">
+                      Gérez vos médicaments et prescriptions
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowPrescriptionsView(false)}
+                  className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Contenu des prescriptions - à implémenter avec les vraies données */}
+              <div className="text-center py-8">
+                <Pill className="h-12 w-12 text-cyan-400 mx-auto mb-4" />
+                <p className="text-slate-600 dark:text-slate-400">
+                  Fonctionnalité de prescriptions à implémenter
+                </p>
+                <button
+                  onClick={() => navigate("/patient/prescriptions")}
+                  className="mt-4 px-4 py-2 bg-cyan-500 text-white rounded-lg hover:bg-cyan-600 transition-colors"
+                >
+                  Voir la page complète
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* === Vue intégrée - Rendez-vous === */}
+        {showAppointmentView && nextAppointmentData?.appointment && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="mb-8"
+          >
+            <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-emerald-100 dark:bg-emerald-900/50 rounded-xl flex items-center justify-center">
+                    <CalendarDays className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                      Mon rendez-vous
+                    </h2>
+                    <p className="text-sm text-slate-600 dark:text-slate-400">
+                      Détails de votre prochain rendez-vous
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowAppointmentView(false)}
+                  className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Détails du rendez-vous */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-4 p-4 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg">
+                  <div className="w-12 h-12 bg-emerald-100 dark:bg-emerald-900/50 rounded-full flex items-center justify-center">
+                    <Stethoscope className="h-6 w-6 text-emerald-600" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-medium text-slate-900 dark:text-slate-100">
+                      {nextAppointmentData.appointment.doctor_name ||
+                        `Dr ${nextAppointmentData.appointment.doctor_id}`}
+                    </h3>
+                    <p className="text-sm text-slate-600 dark:text-slate-400">
+                      {new Date(
+                        nextAppointmentData.appointment.scheduled_at
+                      ).toLocaleDateString("fr-FR", {
+                        weekday: "long",
+                        day: "numeric",
+                        month: "long",
+                        year: "numeric",
+                      })}
+                    </p>
+                    <p className="text-sm text-slate-600 dark:text-slate-400">
+                      {new Date(
+                        nextAppointmentData.appointment.scheduled_at
+                      ).toLocaleTimeString("fr-FR", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex gap-2">
+                  <button
+                    onClick={() =>
+                      navigate(
+                        `/booking/${nextAppointmentData.appointment.doctor_id}`
+                      )
+                    }
+                    className="flex-1 px-4 py-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors"
+                  >
+                    Modifier le RDV
+                  </button>
+                  <button
+                    onClick={() => setShowAppointmentView(false)}
+                    className="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors"
+                  >
+                    Fermer
+                  </button>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
 
         {/* === Statistiques principales === */}
         <div className="grid md:grid-cols-3 gap-4">
