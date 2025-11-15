@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import Navbar from "../components/Navbar.jsx"; // ✅ ajouté
 
 // 🩺 Pages Patient
+import PatientAppointments from "../pages/patient/Appointments.jsx";
 import DashboardContainer from "../pages/patient/DashboardContainer.jsx";
 import PatientHome from "../pages/patient/Home.jsx";
 import Profile from "../pages/patient/Profile.jsx";
@@ -68,6 +69,14 @@ export default function AppRouter() {
         <Route
           path="/patient/prescriptions"
           element={<PatientPrescriptions />}
+        />
+        <Route
+          path="/patient/appointments"
+          element={
+            <ProtectedRoute roles={["patient"]}>
+              <PatientAppointments />
+            </ProtectedRoute>
+          }
         />
         <Route
           path="/notifications"
