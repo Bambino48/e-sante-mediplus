@@ -264,7 +264,7 @@ class AppointmentController extends Controller
 
         return response()->json([
             'message' => 'Rendez-vous à venir récupérés avec succès',
-            'appointments' => $upcomingAppointments
+            'items' => $upcomingAppointments
         ]);
     }
 }

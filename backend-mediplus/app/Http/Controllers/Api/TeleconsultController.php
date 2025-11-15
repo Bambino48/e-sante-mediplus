@@ -65,7 +65,7 @@ class TeleconsultController extends Controller
 
         return response()->json([
             'message' => 'Téléconsultations actives récupérées avec succès',
-            'teleconsults' => $activeTeleconsults
+            'items' => $activeTeleconsults
         ]);
     }
 }

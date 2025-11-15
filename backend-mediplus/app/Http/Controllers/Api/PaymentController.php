@@ -78,7 +78,7 @@ class PaymentController extends Controller
 
         return response()->json([
             'message' => 'Paiements en attente récupérés avec succès',
-            'payments' => $pendingPayments
+            'items' => $pendingPayments
         ]);
     }
 }

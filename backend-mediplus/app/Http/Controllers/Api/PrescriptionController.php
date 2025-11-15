@@ -70,7 +70,7 @@ class PrescriptionController extends Controller
 
         return response()->json([
             'message' => 'Prescriptions récupérées avec succès',
-            'prescriptions' => $activePrescriptions
+            'items' => $activePrescriptions
         ]);
     }
 }
