@@ -23,7 +23,7 @@ import {
   resolvePhotoUrl,
 } from "/src/utils/doctorCardUtils.jsx";
 
-const DoctorCard = ({ doctor, user, userLocation }) => {
+const DoctorCard = ({ doctor, user, userLocation, onBooking }) => {
   const navigate = useNavigate();
 
   // Extraction des données du médecin avec fallbacks
@@ -96,6 +96,13 @@ const DoctorCard = ({ doctor, user, userLocation }) => {
     }
     if (!nextSlot) {
       e.preventDefault();
+      return;
+    }
+    // Si onBooking est fourni, l'utiliser au lieu de naviguer
+    if (onBooking) {
+      e.preventDefault();
+      onBooking(doctor);
+      return;
     }
   };
 
@@ -288,28 +295,53 @@ const DoctorCard = ({ doctor, user, userLocation }) => {
           <Eye className="h-4 w-4 mr-2 transition-transform duration-200 group-hover:scale-110" />
           Voir profil
         </Link>
-        <Link
-          className={`flex-1 text-sm sm:text-base py-2 px-3 sm:px-4 rounded-lg font-medium transition-all duration-200 hover:scale-105 hover:shadow-md active:scale-95 group ${
-            nextSlot
-              ? "btn-primary hover:bg-cyan-600 dark:hover:bg-cyan-500"
-              : "bg-slate-300 dark:bg-slate-600 text-slate-500 dark:text-slate-400 cursor-not-allowed"
-          }`}
-          to={nextSlot ? `/booking/${doctor.id}` : "#"}
-          onClick={handleBookingClick}
-          title={
-            nextSlot
-              ? `Réserver un rendez-vous - Prochain créneau: ${nextSlot.formatted}`
-              : "Aucun créneau disponible actuellement"
-          }
-          aria-label={
-            nextSlot
-              ? `Réserver un rendez-vous avec ${doctorName} - Disponible ${nextSlot.formatted}`
-              : `Aucun créneau disponible pour ${doctorName}`
-          }
-        >
-          <Calendar className="h-4 w-4 mr-2 transition-transform duration-200 group-hover:scale-110" />
-          {nextSlot ? "Réserver RDV" : "Indisponible"}
-        </Link>
+        {onBooking ? (
+          <button
+            className={`flex-1 text-sm sm:text-base py-2 px-3 sm:px-4 rounded-lg font-medium transition-all duration-200 hover:scale-105 hover:shadow-md active:scale-95 group ${
+              nextSlot
+                ? "btn-primary hover:bg-cyan-600 dark:hover:bg-cyan-500"
+                : "bg-slate-300 dark:bg-slate-600 text-slate-500 dark:text-slate-400 cursor-not-allowed"
+            }`}
+            onClick={handleBookingClick}
+            disabled={!nextSlot}
+            title={
+              nextSlot
+                ? `Réserver un rendez-vous - Prochain créneau: ${nextSlot.formatted}`
+                : "Aucun créneau disponible actuellement"
+            }
+            aria-label={
+              nextSlot
+                ? `Réserver un rendez-vous avec ${doctorName} - Disponible ${nextSlot.formatted}`
+                : `Aucun créneau disponible pour ${doctorName}`
+            }
+          >
+            <Calendar className="h-4 w-4 mr-2 transition-transform duration-200 group-hover:scale-110" />
+            {nextSlot ? "Réserver RDV" : "Indisponible"}
+          </button>
+        ) : (
+          <Link
+            className={`flex-1 text-sm sm:text-base py-2 px-3 sm:px-4 rounded-lg font-medium transition-all duration-200 hover:scale-105 hover:shadow-md active:scale-95 group ${
+              nextSlot
+                ? "btn-primary hover:bg-cyan-600 dark:hover:bg-cyan-500"
+                : "bg-slate-300 dark:bg-slate-600 text-slate-500 dark:text-slate-400 cursor-not-allowed"
+            }`}
+            to={nextSlot ? `/booking/${doctor.id}` : "#"}
+            onClick={handleBookingClick}
+            title={
+              nextSlot
+                ? `Réserver un rendez-vous - Prochain créneau: ${nextSlot.formatted}`
+                : "Aucun créneau disponible actuellement"
+            }
+            aria-label={
+              nextSlot
+                ? `Réserver un rendez-vous avec ${doctorName} - Disponible ${nextSlot.formatted}`
+                : `Aucun créneau disponible pour ${doctorName}`
+            }
+          >
+            <Calendar className="h-4 w-4 mr-2 transition-transform duration-200 group-hover:scale-110" />
+            {nextSlot ? "Réserver RDV" : "Indisponible"}
+          </Link>
+        )}
       </div>
     </motion.div>
   );

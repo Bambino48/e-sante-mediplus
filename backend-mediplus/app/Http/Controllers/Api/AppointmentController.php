@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreAppointmentRequest;
 use App\Http\Requests\UpdateAppointmentRequest;
 use App\Models\Appointment;
+use App\Models\NotificationCustom;
 use Illuminate\Http\Request;
 
 class AppointmentController extends Controller
@@ -63,6 +64,19 @@ class AppointmentController extends Controller
             'duration' => $validated['duration'] ?? 30, // durée par défaut 30 minutes
         ]);
 
+        // Créer une notification pour le médecin
+        NotificationCustom::create([
+            'user_id' => $validated['doctor_id'],
+            'type' => 'appointment_requested',
+            'data' => [
+                'appointment_id' => $appointment->id,
+                'patient_name' => $user->name,
+                'scheduled_at' => $appointment->scheduled_at,
+                'reason' => $appointment->reason,
+                'message' => 'Un nouveau rendez-vous a été demandé'
+            ]
+        ]);
+
         return response()->json([
             'message' => 'Rendez-vous réservé avec succès',
             'appointment' => $appointment->load('doctor')
@@ -82,7 +96,49 @@ class AppointmentController extends Controller
             ->firstOrFail();
 
         $appointment->update(['status' => 'confirmed']);
+
+        // Créer une notification pour le patient
+        NotificationCustom::create([
+            'user_id' => $appointment->patient_id,
+            'type' => 'appointment_confirmed',
+            'data' => [
+                'appointment_id' => $appointment->id,
+                'doctor_name' => $user->name,
+                'scheduled_at' => $appointment->scheduled_at,
+                'message' => 'Votre rendez-vous a été confirmé par le médecin'
+            ]
+        ]);
+
         return response()->json(['message' => 'Rendez-vous confirmé', 'appointment' => $appointment]);
+    }
+
+    // POST /api/pro/appointments/{id}/reject
+    public function reject(Request $request, $id)
+    {
+        $user = $request->user();
+        if (!$user->isDoctor()) {
+            return response()->json(['message' => 'Accès refusé'], 403);
+        }
+
+        $appointment = Appointment::where('id', $id)
+            ->where('doctor_id', $user->id)
+            ->firstOrFail();
+
+        $appointment->update(['status' => 'cancelled']);
+
+        // Créer une notification pour le patient
+        NotificationCustom::create([
+            'user_id' => $appointment->patient_id,
+            'type' => 'appointment_rejected',
+            'data' => [
+                'appointment_id' => $appointment->id,
+                'doctor_name' => $user->name,
+                'scheduled_at' => $appointment->scheduled_at,
+                'message' => 'Votre rendez-vous a été refusé par le médecin'
+            ]
+        ]);
+
+        return response()->json(['message' => 'Rendez-vous refusé', 'appointment' => $appointment]);
     }
 
     // GET /api/pro/appointments
@@ -94,7 +150,7 @@ class AppointmentController extends Controller
         }
 
         $appointments = Appointment::where('doctor_id', $user->id)
-            ->with('patient')
+            ->with(['patient:id,name,email', 'doctor:id,name,email'])
             ->orderByDesc('scheduled_at')
             ->get();
 

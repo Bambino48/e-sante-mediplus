@@ -21,9 +21,21 @@ export default function SchedulePicker({
   value, // { date: Date, time: "HH:mm" }
   onChange,
   slots = {}, // { 'YYYY-MM-DD': ['09:00','09:30',...] }
+  // Support pour les anciennes props d'InlineBooking
+  selection,
+  onSelect,
+  mode,
+  onModeChange,
 }) {
+  // Utiliser les nouvelles props si disponibles, sinon les anciennes
+  const currentSelection = value || selection;
+  const currentOnChange = onChange || onSelect;
+  const currentMode = mode;
+  const currentOnModeChange = onModeChange;
   const [currentMonth, setCurrentMonth] = useState(new Date());
-  const [selectedDate, setSelectedDate] = useState(value?.date || null);
+  const [selectedDate, setSelectedDate] = useState(
+    currentSelection?.date || null
+  );
 
   // Calculer les jours du mois avec indicateurs de disponibilité
   const monthDays = useMemo(() => {
@@ -154,6 +166,55 @@ export default function SchedulePicker({
         </div>
       </div>
 
+      {/* Sélection du mode de consultation */}
+      {currentMode !== undefined && currentOnModeChange && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mt-6 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl"
+        >
+          <h4 className="text-sm font-medium text-slate-900 dark:text-slate-100 mb-3">
+            Mode de consultation
+          </h4>
+          <div className="flex gap-3">
+            <button
+              onClick={() => currentOnModeChange("presentiel")}
+              className={`flex-1 px-4 py-3 rounded-lg border transition-all ${
+                currentMode === "presentiel"
+                  ? "bg-cyan-500 text-white border-cyan-500"
+                  : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800"
+              }`}
+            >
+              <div className="flex items-center justify-center gap-2">
+                <div className="w-4 h-4 rounded border-2 border-current flex items-center justify-center">
+                  {currentMode === "presentiel" && (
+                    <div className="w-2 h-2 bg-current rounded-full"></div>
+                  )}
+                </div>
+                <span className="text-sm font-medium">Présentiel</span>
+              </div>
+            </button>
+            <button
+              onClick={() => currentOnModeChange("teleconsult")}
+              className={`flex-1 px-4 py-3 rounded-lg border transition-all ${
+                currentMode === "teleconsult"
+                  ? "bg-cyan-500 text-white border-cyan-500"
+                  : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800"
+              }`}
+            >
+              <div className="flex items-center justify-center gap-2">
+                <div className="w-4 h-4 rounded border-2 border-current flex items-center justify-center">
+                  {currentMode === "teleconsult" && (
+                    <div className="w-2 h-2 bg-current rounded-full"></div>
+                  )}
+                </div>
+                <span className="text-sm font-medium">Téléconsultation</span>
+              </div>
+            </button>
+          </div>
+        </motion.div>
+      )}
+
       {/* Section des créneaux horaires pour le jour sélectionné */}
       {selectedDate && hasSlots(selectedDate) && (
         <motion.div
@@ -169,11 +230,11 @@ export default function SchedulePicker({
               <motion.button
                 key={time}
                 whileTap={{ scale: 0.95 }}
-                onClick={() => onChange?.({ date: selectedDate, time })}
+                onClick={() => currentOnChange?.({ date: selectedDate, time })}
                 className={`px-3 py-2 rounded-lg text-sm border transition-all ${
-                  value &&
-                  isSameDay(value.date, selectedDate) &&
-                  value.time === time
+                  currentSelection &&
+                  isSameDay(currentSelection.date, selectedDate) &&
+                  currentSelection.time === time
                     ? "bg-cyan-500 text-white border-cyan-500"
                     : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800"
                 }`}

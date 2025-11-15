@@ -16,10 +16,24 @@ export default defineConfig({
       util: "util/",
       events: "events/",
     },
+    extensions: [".js", ".jsx", ".ts", ".tsx", ".json"],
   },
   build: {
     rollupOptions: {
       plugins: [nodePolyfills()],
+      external: [],
     },
+  },
+  optimizeDeps: {
+    include: [
+      "axios",
+      "@tanstack/react-query",
+      "zustand",
+      "date-fns",
+      "framer-motion",
+      "lucide-react",
+      "react-hot-toast",
+      "react-router-dom",
+    ],
   },
 });

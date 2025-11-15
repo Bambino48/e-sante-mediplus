@@ -67,6 +67,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/patient/appointments/{id}', [AppointmentController::class, 'update']);
     Route::delete('/patient/appointments/{id}', [AppointmentController::class, 'cancel']);
     Route::post('/pro/appointments/{id}/confirm', [AppointmentController::class, 'confirm']);
+    Route::post('/pro/appointments/{id}/reject', [AppointmentController::class, 'reject']);
 
     // =======================================================
     // Phase 4 — Infrastructure de Téléconsultation

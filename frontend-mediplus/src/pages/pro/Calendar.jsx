@@ -5,6 +5,33 @@ import ProLayout from "../../layouts/ProLayout.jsx";
 
 export default function Calendar() {
   const { data, isLoading, refetch } = useAppointments({ role: "doctor" });
+  const queryClient = useQueryClient();
+
+  // Mutation pour confirmer un rendez-vous
+  const confirmMutation = useMutation({
+    mutationFn: confirmAppointment,
+    onSuccess: (data) => {
+      toast.success(data.message || "Rendez-vous confirmé");
+      queryClient.invalidateQueries(["appointments"]);
+      refetch();
+    },
+    onError: (error) => {
+      toast.error(error.message || "Erreur lors de la confirmation");
+    },
+  });
+
+  // Mutation pour refuser un rendez-vous
+  const rejectMutation = useMutation({
+    mutationFn: rejectAppointment,
+    onSuccess: (data) => {
+      toast.success(data.message || "Rendez-vous refusé");
+      queryClient.invalidateQueries(["appointments"]);
+      refetch();
+    },
+    onError: (error) => {
+      toast.error(error.message || "Erreur lors du refus");
+    },
+  });
 
   // Fonction pour formater la date et l'heure
   const formatDateTime = (scheduledAt) => {
@@ -78,8 +105,8 @@ export default function Calendar() {
                       <td className="px-4 py-3">{date}</td>
                       <td className="px-4 py-3">{time}</td>
                       <td className="px-4 py-3">
-                        {/* TODO: Afficher le nom du patient depuis patient_id */}
-                        Patient #{appointment.patient_id}
+                        {appointment.patient?.name ||
+                          `Patient #${appointment.patient_id}`}
                       </td>
                       <td className="px-4 py-3">
                         {appointment.reason || "Non spécifié"}
@@ -102,9 +129,28 @@ export default function Calendar() {
                       <td className="px-4 py-3">
                         <div className="flex gap-2">
                           {appointment.status === "pending" && (
-                            <button className="text-xs bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded">
-                              Confirmer
-                            </button>
+                            <>
+                              <button
+                                onClick={() =>
+                                  confirmMutation.mutate(appointment.id)
+                                }
+                                disabled={confirmMutation.isPending}
+                                className="text-xs bg-green-500 hover:bg-green-600 disabled:bg-green-300 text-white px-2 py-1 rounded"
+                              >
+                                {confirmMutation.isPending
+                                  ? "..."
+                                  : "Confirmer"}
+                              </button>
+                              <button
+                                onClick={() =>
+                                  rejectMutation.mutate(appointment.id)
+                                }
+                                disabled={rejectMutation.isPending}
+                                className="text-xs bg-red-500 hover:bg-red-600 disabled:bg-red-300 text-white px-2 py-1 rounded"
+                              >
+                                {rejectMutation.isPending ? "..." : "Refuser"}
+                              </button>
+                            </>
                           )}
                           <button className="text-xs bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded">
                             Détails
