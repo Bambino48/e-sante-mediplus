@@ -16,7 +16,10 @@ class NotificationController extends Controller
             ->orderByDesc('created_at')
             ->get();
 
-        return response()->json(['notifications' => $notifications]);
+        return response()->json([
+            'items' => $notifications,
+            'count' => $notifications->count()
+        ]);
     }
 
     // GET /api/notifications/unread
@@ -28,6 +31,22 @@ class NotificationController extends Controller
             ->orderByDesc('created_at')
             ->get();
 
-        return response()->json(['notifications' => $notifications]);
+        return response()->json([
+            'items' => $notifications,
+            'count' => $notifications->count()
+        ]);
+    }
+
+    // PATCH /api/notifications/{id}/read
+    public function markAsRead(Request $request, $id)
+    {
+        $user = $request->user();
+        $notification = NotificationCustom::where('id', $id)
+            ->where('user_id', $user->id)
+            ->firstOrFail();
+
+        $notification->update(['read_at' => now()]);
+
+        return response()->json(['message' => 'Notification marquée comme lue']);
     }
 }

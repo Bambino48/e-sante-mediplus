@@ -19,6 +19,7 @@ export default function Calendar() {
     onSuccess: (data) => {
       toast.success(data.message || "Rendez-vous confirmé");
       queryClient.invalidateQueries(["appointments"]);
+      queryClient.invalidateQueries(["unreadNotifications"]);
       refetch();
     },
     onError: (error) => {
@@ -32,6 +33,7 @@ export default function Calendar() {
     onSuccess: (data) => {
       toast.success(data.message || "Rendez-vous refusé");
       queryClient.invalidateQueries(["appointments"]);
+      queryClient.invalidateQueries(["unreadNotifications"]);
       refetch();
     },
     onError: (error) => {
