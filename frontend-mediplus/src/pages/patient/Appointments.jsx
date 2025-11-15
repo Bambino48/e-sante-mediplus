@@ -93,12 +93,6 @@ export default function Appointments() {
 
   // ✅ Filtrage des rendez-vous (utilise scheduled_at de la BDD)
   const now = new Date();
-  const filteredAppointments = appointments.filter((apt) => {
-    const aptDate = new Date(apt.scheduled_at);
-    if (filter === "upcoming") return aptDate >= now;
-    if (filter === "past") return aptDate < now;
-    return true;
-  });
 
   const upcomingCount = appointments.filter(
     (a) => new Date(a.scheduled_at) >= now
@@ -106,6 +100,25 @@ export default function Appointments() {
   const pastCount = appointments.filter(
     (a) => new Date(a.scheduled_at) < now
   ).length;
+
+  // ✅ Calculer le prochain rendez-vous pour éviter la duplication
+  const nextAppointment = appointments
+    .filter(
+      (apt) => new Date(apt.scheduled_at) >= now && apt.status !== "cancelled"
+    )
+    .sort((a, b) => new Date(a.scheduled_at) - new Date(b.scheduled_at))[0];
+
+  // ✅ Filtrage des rendez-vous en excluant le prochain si affiché en haut
+  const filteredAppointments = appointments.filter((apt) => {
+    const aptDate = new Date(apt.scheduled_at);
+    if (filter === "upcoming") {
+      // Exclure le prochain rendez-vous de la liste si il est affiché en haut
+      if (nextAppointment && apt.id === nextAppointment.id) return false;
+      return aptDate >= now;
+    }
+    if (filter === "past") return aptDate < now;
+    return true;
+  });
 
   const handleCancel = (id) => {
     toast(
@@ -194,6 +207,111 @@ export default function Appointments() {
           Tous ({appointments.length})
         </button>
       </div>
+
+      {/* ✅ Section Prochain Rendez-vous avec Statut */}
+      {nextAppointment && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-linear-to-r from-cyan-50 to-blue-50 dark:from-cyan-900/20 dark:to-blue-900/20 border border-cyan-200 dark:border-cyan-800 rounded-xl p-6 shadow-sm"
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-cyan-100 dark:bg-cyan-800/50 rounded-full">
+                <Calendar className="h-6 w-6 text-cyan-600 dark:text-cyan-400" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
+                  Prochain rendez-vous
+                </h3>
+                <div className="flex items-center gap-4 mt-2">
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-slate-500" />
+                    <span className="text-sm text-slate-600 dark:text-slate-400">
+                      {new Date(
+                        nextAppointment.scheduled_at
+                      ).toLocaleDateString("fr-FR", {
+                        weekday: "long",
+                        day: "numeric",
+                        month: "long",
+                        year: "numeric",
+                      })}{" "}
+                      à{" "}
+                      {new Date(
+                        nextAppointment.scheduled_at
+                      ).toLocaleTimeString("fr-FR", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-slate-600 dark:text-slate-400">
+                      avec
+                    </span>
+                    <span className="font-medium text-slate-900 dark:text-white">
+                      {nextAppointment.doctor_name ||
+                        nextAppointment.doctor?.name ||
+                        `Dr ${nextAppointment.doctor_id}`}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <span
+                className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(
+                  nextAppointment.status
+                )}`}
+              >
+                {getStatusLabel(nextAppointment.status)}
+              </span>
+              {nextAppointment.status === "confirmed" && (
+                <div className="flex items-center gap-1 text-green-600 dark:text-green-400">
+                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                  <span className="text-xs font-medium">Confirmé</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Barre de progression temporelle */}
+          <div className="mt-4">
+            <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mb-1">
+              <span>Statut du rendez-vous</span>
+              <span>
+                {Math.max(
+                  0,
+                  Math.ceil(
+                    (new Date(nextAppointment.scheduled_at) - now) /
+                      (1000 * 60 * 60 * 24)
+                  )
+                )}{" "}
+                jours restants
+              </span>
+            </div>
+            <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
+              <div
+                className={`h-2 rounded-full transition-all duration-300 ${
+                  nextAppointment.status === "confirmed"
+                    ? "bg-green-500"
+                    : nextAppointment.status === "pending"
+                    ? "bg-yellow-500"
+                    : "bg-blue-500"
+                }`}
+                style={{
+                  width:
+                    nextAppointment.status === "confirmed"
+                      ? "100%"
+                      : nextAppointment.status === "pending"
+                      ? "60%"
+                      : "80%",
+                }}
+              ></div>
+            </div>
+          </div>
+        </motion.div>
+      )}
 
       {/* Liste des rendez-vous */}
       {filteredAppointments.length === 0 ? (

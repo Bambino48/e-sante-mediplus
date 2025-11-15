@@ -18,7 +18,7 @@ export async function getPatientAppointments() {
     },
   });
   const data = await response.json();
-  return Array.isArray(data) ? { items: data } : data;
+  return { items: data.appointments || [] };
 }
 
 // API Réelles - Créer un rendez-vous

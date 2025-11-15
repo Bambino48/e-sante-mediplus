@@ -63,7 +63,7 @@ class PrescriptionController extends Controller
             return response()->json(['message' => 'Accès refusé'], 403);
         }
 
-        // Pour l'instant, retourner toutes les prescriptions (TODO: ajouter colonne status)
+        // Récupérer les prescriptions du patient (pas de colonne status/end_date dans la table actuelle)
         $activePrescriptions = Prescription::where('patient_id', $user->id)
             ->orderBy('created_at', 'desc')
             ->get();

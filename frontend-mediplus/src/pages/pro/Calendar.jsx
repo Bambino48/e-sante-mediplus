@@ -2,6 +2,10 @@
 import { CalendarDays } from "lucide-react";
 import { useAppointments } from "../../hooks/useAppointments.js";
 import ProLayout from "../../layouts/ProLayout.jsx";
+import { useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
+import { confirmAppointment, rejectAppointment } from "../../api/appointments.js";
+import toast from "react-hot-toast";
 
 export default function Calendar() {
   const { data, isLoading, refetch } = useAppointments({ role: "doctor" });

@@ -24,6 +24,13 @@ class AppointmentController extends Controller
             ->orderByDesc('scheduled_at')
             ->get();
 
+        // Ajouter le nom du docteur directement dans chaque rendez-vous
+        $appointments->each(function ($appointment) {
+            if ($appointment->doctor) {
+                $appointment->doctor_name = $appointment->doctor->name;
+            }
+        });
+
         return response()->json(['appointments' => $appointments]);
     }
 
@@ -41,6 +48,11 @@ class AppointmentController extends Controller
             ->with('doctor')
             ->orderBy('scheduled_at', 'asc')
             ->first();
+
+        // Ajouter le nom du docteur directement dans la réponse
+        if ($nextAppointment && $nextAppointment->doctor) {
+            $nextAppointment->doctor_name = $nextAppointment->doctor->name;
+        }
 
         return response()->json(['appointment' => $nextAppointment]);
     }

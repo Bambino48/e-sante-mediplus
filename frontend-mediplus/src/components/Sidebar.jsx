@@ -20,8 +20,8 @@ import {
 import { Fragment } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth.js";
+import { usePatientUpcomingAppointments } from "../hooks/usePatientDashboard.js";
 import { useUIStore } from "../store/uiStore.js";
-
 const baseLink =
   "flex items-center gap-2 px-3 py-2 rounded-xl text-sm cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition";
 const active =
@@ -37,6 +37,9 @@ export default function Sidebar({
   const { user } = useAuth();
   const navigate = useNavigate();
   const groups = getGroupsBySection(section);
+
+  // ✅ Hook pour récupérer les rendez-vous à venir (pour l'indicateur)
+  const { data: upcomingAppointments } = usePatientUpcomingAppointments();
 
   const handleClick = (item) => {
     if (setActiveView) setActiveView(item.key);
@@ -142,10 +145,21 @@ export default function Sidebar({
                       onClick={() => handleClick(it)}
                       className={`${baseLink} ${
                         isActive ? active : "text-slate-700 dark:text-slate-200"
+                      } ${
+                        it.key === "appointments" && section === "patient"
+                          ? "relative"
+                          : ""
                       }`}
                       title={it.label}
                     >
-                      <span className="text-lg">{it.icon}</span>
+                      <span className="text-lg relative">
+                        {it.icon}
+                        {it.key === "appointments" &&
+                          section === "patient" &&
+                          upcomingAppointments?.appointments?.length > 0 && (
+                            <span className="absolute -top-1 -right-1 h-2 w-2 bg-green-500 rounded-full"></span>
+                          )}
+                      </span>
                       <span className={`${sidebarOpen ? "" : "hidden"}`}>
                         {it.label}
                       </span>
@@ -159,11 +173,22 @@ export default function Sidebar({
                           isActive
                             ? active
                             : "text-slate-700 dark:text-slate-200"
+                        } ${
+                          it.key === "appointments" && section === "patient"
+                            ? "relative"
+                            : ""
                         }`
                       }
                       title={it.label}
                     >
-                      <span className="text-lg">{it.icon}</span>
+                      <span className="text-lg relative">
+                        {it.icon}
+                        {it.key === "appointments" &&
+                          section === "patient" &&
+                          upcomingAppointments?.appointments?.length > 0 && (
+                            <span className="absolute -top-1 -right-1 h-2 w-2 bg-green-500 rounded-full"></span>
+                          )}
+                      </span>
                       <span className={`${sidebarOpen ? "" : "hidden"}`}>
                         {it.label}
                       </span>

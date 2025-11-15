@@ -6,6 +6,10 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\PatientProfile;
+use App\Models\Appointment;
+use App\Models\Prescription;
+use App\Models\Payment;
+use App\Models\Consultation;
 
 class PatientProfileController extends Controller
 {
@@ -148,13 +152,20 @@ class PatientProfileController extends Controller
             return response()->json(['message' => 'Accès réservé aux patients.'], 403);
         }
 
-        // Statistiques basiques du patient (à implémenter plus tard avec les vraies relations)
+        // Statistiques réelles du patient
         $stats = [
-            'total_appointments' => 0, // TODO: Implement with proper relationships
-            'upcoming_appointments' => 0,
-            'completed_appointments' => 0,
-            'total_prescriptions' => 0,
-            'active_prescriptions' => 0,
+            'upcoming_appointments' => Appointment::where('patient_id', $user->id)
+                ->where('scheduled_at', '>', now())
+                ->where('status', '!=', 'cancelled')
+                ->count(),
+            'active_prescriptions' => Prescription::where('patient_id', $user->id)
+                ->count(), // Note: pas de colonne status/end_date dans la table actuelle
+            'pending_payments' => Payment::where('patient_id', $user->id)
+                ->where('status', 'initiated')
+                ->count(),
+            'total_consultations' => Consultation::where('patient_id', $user->id)
+                ->where('status', 'completed')
+                ->count(),
             'account_created' => $user->created_at->format('Y-m-d'),
             'last_login' => $user->updated_at->format('Y-m-d'),
         ];
