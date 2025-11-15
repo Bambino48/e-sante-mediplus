@@ -80,12 +80,12 @@ export default function Sidebar({
 
   return (
     <aside
-      className={`relative flex flex-col justify-between bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 shadow-sm transition-all duration-300 ${
+      className={`sticky top-0 flex flex-col justify-between bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 shadow-sm transition-all duration-300 h-screen ${
         sidebarOpen ? "min-w-64 w-64" : "w-20"
       } ${className}`}
     >
-      {/* === Haut : Photo + navigation === */}
-      <div className="p-3 flex flex-col flex-1 overflow-y-auto">
+      {/* === Haut : Photo (toujours visible) === */}
+      <div className="p-3 shrink-0">
         {/* ✅ Photo (toujours visible, mais adaptée à la taille) */}
         <div className="flex flex-col items-center mb-8">
           <div className="relative">
@@ -108,8 +108,10 @@ export default function Sidebar({
             </p>
           )}
         </div>
+      </div>
 
-        {/* ✅ Navigation */}
+      {/* === Milieu : Navigation === */}
+      <div className="flex-1 p-3">
         <nav className="space-y-4">
           {groups.map((g) => (
             <Fragment key={g.title}>
