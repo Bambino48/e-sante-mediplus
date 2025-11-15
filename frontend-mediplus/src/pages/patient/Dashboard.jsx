@@ -144,7 +144,7 @@ export default function PatientDashboard() {
         duration: 3000,
       });
     } else {
-      navigate("/booking");
+      setShowAppointmentView(true);
     }
   };
 
@@ -156,7 +156,7 @@ export default function PatientDashboard() {
         duration: 3000,
       });
     } else {
-      navigate("/patient/prescriptions");
+      setShowPrescriptionsView(true);
     }
   };
 
