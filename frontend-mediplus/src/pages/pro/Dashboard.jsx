@@ -297,7 +297,8 @@ export default function ProDashboard() {
                 "Chargement..."
               ) : (
                 <>
-                  Bonjour Dr. {profile?.first_name} {profile?.last_name} 👋
+                  Bonjour {profile?.first_name?.startsWith("Dr.") ? "" : "Dr. "}
+                  {profile?.first_name} {profile?.last_name} 👋
                 </>
               )}
             </h1>

@@ -301,20 +301,23 @@ class DoctorController extends Controller
             ->orderBy('scheduled_at')
             ->get(['id', 'scheduled_at', 'status', 'patient_id']);
 
-        // Revenus (si il y a un système de paiement)
-        $totalRevenue = \App\Models\Payment::whereHas('appointment', function ($q) use ($user) {
-            $q->where('doctor_id', $user->id)->where('status', 'completed');
+        // Revenus (si il y a un système de paiement) - du mois en cours
+        $monthlyRevenue = \App\Models\Payment::whereHas('appointment', function ($q) use ($user) {
+            $q->where('doctor_id', $user->id)
+                ->where('status', 'completed')
+                ->whereMonth('scheduled_at', now()->month)
+                ->whereYear('scheduled_at', now()->year);
         })->sum('amount') ?? 0;
 
+        // Tâches en attente (prescriptions non signées, etc.)
+        $pendingTasks = \App\Models\Prescription::where('doctor_id', $user->id)
+            ->where('status', 'pending')
+            ->count();
+
         return response()->json([
-            'stats' => [
-                'total_appointments' => $totalAppointments,
-                'today_appointments' => $todayAppointments,
-                'week_appointments' => $weekAppointments,
-                'total_patients' => $totalPatients,
-                'total_revenue' => $totalRevenue,
-            ],
-            'today_appointments_details' => $todayAppointmentsDetails,
+            'appointments_today' => $todayAppointments,
+            'revenue_month' => $monthlyRevenue,
+            'pending_tasks' => $pendingTasks,
         ]);
     }
 }

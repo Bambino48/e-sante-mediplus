@@ -10,8 +10,8 @@ async function fetchAppointments({ role, status, doctorId }) {
     let params = {};
 
     if (role === "doctor" || role === "pro") {
-      // Pour les professionnels : récupérer leurs rendez-vous du jour
-      endpoint = "/doctor/appointments/today";
+      // Pour les professionnels : récupérer tous leurs rendez-vous
+      endpoint = "/pro/appointments";
       if (doctorId) {
         params.doctor_id = doctorId;
       }
@@ -25,7 +25,15 @@ async function fetchAppointments({ role, status, doctorId }) {
     }
 
     const response = await api.get(endpoint, { params });
-    return response.data;
+
+    // Normaliser la réponse pour avoir toujours data.items
+    if (response.data.appointments) {
+      return { items: response.data.appointments };
+    } else if (response.data.items) {
+      return response.data;
+    } else {
+      return { items: [] };
+    }
   } catch (error) {
     console.error("Erreur lors de la récupération des rendez-vous:", error);
     // Retourner des données vides en cas d'erreur

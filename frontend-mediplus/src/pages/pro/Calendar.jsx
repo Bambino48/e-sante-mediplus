@@ -1,11 +1,13 @@
 // src/pages/pro/Calendar.jsx
-import { CalendarDays } from "lucide-react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { CalendarDays, Phone, User, Video } from "lucide-react";
+import toast from "react-hot-toast";
+import {
+  confirmAppointment,
+  rejectAppointment,
+} from "../../api/appointments.js";
 import { useAppointments } from "../../hooks/useAppointments.js";
 import ProLayout from "../../layouts/ProLayout.jsx";
-import { useQueryClient } from "@tanstack/react-query";
-import { useMutation } from "@tanstack/react-query";
-import { confirmAppointment, rejectAppointment } from "../../api/appointments.js";
-import toast from "react-hot-toast";
 
 export default function Calendar() {
   const { data, isLoading, refetch } = useAppointments({ role: "doctor" });
@@ -60,6 +62,30 @@ export default function Calendar() {
     return statusMap[status] || status;
   };
 
+  // Fonction pour traduire le mode de consultation
+  const getModeLabel = (mode) => {
+    const modeMap = {
+      presentiel: "Présentiel",
+      video: "Vidéo",
+      telephone: "Téléphone",
+    };
+    return modeMap[mode] || mode || "Non spécifié";
+  };
+
+  // Fonction pour obtenir l'icône du mode de consultation
+  const getModeIcon = (mode) => {
+    switch (mode) {
+      case "presentiel":
+        return <User className="w-4 h-4" />;
+      case "video":
+        return <Video className="w-4 h-4" />;
+      case "telephone":
+        return <Phone className="w-4 h-4" />;
+      default:
+        return <User className="w-4 h-4" />;
+    }
+  };
+
   return (
     <ProLayout title="Calendrier des rendez-vous">
       <div className="mb-4 flex justify-between items-center">
@@ -92,6 +118,7 @@ export default function Calendar() {
                   <th className="px-4 py-2">Heure</th>
                   <th className="px-4 py-2">Patient</th>
                   <th className="px-4 py-2">Motif</th>
+                  <th className="px-4 py-2">Mode</th>
                   <th className="px-4 py-2">Statut</th>
                   <th className="px-4 py-2">Actions</th>
                 </tr>
@@ -114,6 +141,12 @@ export default function Calendar() {
                       </td>
                       <td className="px-4 py-3">
                         {appointment.reason || "Non spécifié"}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800 flex items-center gap-1">
+                          {getModeIcon(appointment.mode)}
+                          {getModeLabel(appointment.mode)}
+                        </span>
                       </td>
                       <td className="px-4 py-3">
                         <span
