@@ -21,12 +21,18 @@ export function usePatients() {
     const patientsMap = new Map();
 
     data.items.forEach((appointment) => {
-      const patientKey = appointment.patient_id || appointment.patient;
+      const patientKey =
+        appointment.patient_id ||
+        appointment.patient?.id ||
+        appointment.patient;
 
       if (!patientsMap.has(patientKey)) {
         patientsMap.set(patientKey, {
           id: patientKey,
-          name: appointment.patient || `Patient #${appointment.patient_id}`,
+          name:
+            appointment.patient?.name ||
+            appointment.patient ||
+            `Patient #${appointment.patient_id}`,
           lastAppointment: appointment,
           totalAppointments: 1,
           upcomingAppointments: appointment.status === "confirmed" ? 1 : 0,

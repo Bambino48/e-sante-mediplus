@@ -320,4 +320,91 @@ class DoctorController extends Controller
             'pending_tasks' => $pendingTasks,
         ]);
     }
+
+    // GET /api/doctor/patients (liste des patients du médecin avec leurs profils)
+    public function patients(Request $request)
+    {
+        $user = $request->user();
+        if (!$user->isDoctor()) return response()->json(['message' => 'Accès refusé'], 403);
+
+        // Récupérer tous les patients qui ont eu des rendez-vous avec ce médecin
+        $patientIds = \App\Models\Appointment::where('doctor_id', $user->id)
+            ->distinct('patient_id')
+            ->pluck('patient_id')
+            ->filter();
+
+        if ($patientIds->isEmpty()) {
+            return response()->json([
+                'message' => 'Aucun patient trouvé.',
+                'patients' => []
+            ]);
+        }
+
+        // Récupérer les informations des patients avec leurs profils médicaux
+        $patients = \App\Models\User::whereIn('id', $patientIds)
+            ->with('patientProfile')
+            ->get()
+            ->map(function ($patient) use ($user) {
+                // Statistiques des rendez-vous pour ce patient
+                $appointments = \App\Models\Appointment::where('doctor_id', $user->id)
+                    ->where('patient_id', $patient->id)
+                    ->orderBy('scheduled_at', 'desc')
+                    ->get();
+
+                $totalAppointments = $appointments->count();
+                $upcomingAppointments = $appointments->where('status', 'confirmed')
+                    ->where('scheduled_at', '>', now())
+                    ->count();
+                $completedAppointments = $appointments->where('status', 'completed')->count();
+                $lastAppointment = $appointments->first();
+
+                // Calculer l'âge si date de naissance disponible
+                $age = null;
+                if ($patient->patientProfile && $patient->patientProfile->date_of_birth) {
+                    $age = \Carbon\Carbon::parse($patient->patientProfile->date_of_birth)->age;
+                }
+
+                // Séparer le nom en prénom et nom de famille (supposition simple)
+                $nameParts = explode(' ', $patient->name, 2);
+                $firstName = $nameParts[0] ?? '';
+                $lastName = $nameParts[1] ?? '';
+
+                return [
+                    'id' => $patient->id,
+                    'first_name' => $firstName,
+                    'last_name' => $lastName,
+                    'name' => $patient->name, // Garder pour compatibilité
+                    'email' => $patient->email,
+                    'phone' => $patient->phone,
+                    'address' => $patient->patientProfile ? $patient->patientProfile->address : null,
+                    'birth_date' => $patient->patientProfile ? $patient->patientProfile->date_of_birth : null,
+                    'age' => $age,
+                    'photo_url' => $patient->photo_url ?? $patient->photo,
+                    'medical_profile' => $patient->patientProfile ? [
+                        'blood_group' => $patient->patientProfile->blood_group,
+                        'height' => $patient->patientProfile->height,
+                        'weight' => $patient->patientProfile->weight,
+                        'allergies' => $patient->patientProfile->allergies,
+                        'chronic_conditions' => $patient->patientProfile->chronic_diseases,
+                        'current_medications' => $patient->patientProfile->medications,
+                        'emergency_contact' => $patient->patientProfile->emergency_contact,
+                    ] : null,
+                    'stats' => [
+                        'total_appointments' => $totalAppointments,
+                        'upcoming_appointments' => $upcomingAppointments,
+                        'completed_appointments' => $completedAppointments,
+                        'last_appointment' => $lastAppointment ? [
+                            'id' => $lastAppointment->id,
+                            'scheduled_at' => $lastAppointment->scheduled_at,
+                            'status' => $lastAppointment->status,
+                        ] : null,
+                    ],
+                ];
+            });
+
+        return response()->json([
+            'message' => 'Patients récupérés avec succès.',
+            'patients' => $patients
+        ]);
+    }
 }

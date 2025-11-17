@@ -49,6 +49,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/doctor/profile', [DoctorController::class, 'storeProfile']);
     Route::put('/doctor/profile', [DoctorController::class, 'updateProfile']);
     Route::get('/doctor/stats', [DoctorController::class, 'stats']);
+    Route::get('/doctor/patients', [DoctorController::class, 'patients']);
 
     // =======================================================
     // Phase 3 — Système de Rendez-vous et Disponibilités
