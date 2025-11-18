@@ -49,6 +49,28 @@ export async function getDoctorPrescriptions() {
   return data; // { items: [...] }
 }
 
+// ✅ API Réelles - Supprimer une prescription (médecin uniquement)
+export async function deletePrescription(prescriptionId) {
+  const { data } = await api.delete(`/pro/prescriptions/${prescriptionId}`);
+  return data;
+}
+
+// ✅ API Réelles - Mettre à jour une prescription (médecin uniquement)
+export async function updatePrescription(prescriptionId, payload) {
+  // payload: { patient_id?, content? }
+  const { data } = await api.put(
+    `/pro/prescriptions/${prescriptionId}`,
+    payload
+  );
+  return data;
+}
+
+// ✅ API Réelles - Obtenir une prescription spécifique (médecin uniquement)
+export async function getPrescription(prescriptionId) {
+  const { data } = await api.get(`/pro/prescriptions/${prescriptionId}`);
+  return data.prescription;
+}
+
 // Fonctions de compatibilité pour les anciens appels
 export async function listPrescriptionsByDoctor(doctor_id) {
   try {

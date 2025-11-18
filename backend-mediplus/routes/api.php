@@ -81,7 +81,10 @@ Route::middleware('auth:sanctum')->group(function () {
     // =======================================================
     // Phase 5 — Gestion des Prescriptions et Ordonnances
     // =======================================================
+    Route::get('/pro/prescriptions/{id}', [PrescriptionController::class, 'show']);
     Route::post('/pro/prescriptions', [PrescriptionController::class, 'store']);
+    Route::put('/pro/prescriptions/{id}', [PrescriptionController::class, 'update']);
+    Route::delete('/pro/prescriptions/{id}', [PrescriptionController::class, 'destroy']);
     Route::get('/pro/prescriptions', [PrescriptionController::class, 'doctorList']);
     Route::get('/patient/prescriptions', [PrescriptionController::class, 'patientList']);
     Route::get('/patient/prescriptions/{id}/download', [PrescriptionController::class, 'download']);

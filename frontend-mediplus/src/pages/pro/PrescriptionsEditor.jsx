@@ -1,15 +1,21 @@
 /* eslint-disable no-unused-vars */
 // src/pages/pro/PrescriptionsEditor.jsx
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import { useSearchParams } from "react-router-dom";
-import { createPrescription } from "../../api/prescriptions.js";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import {
+  createPrescription,
+  getPrescription,
+  updatePrescription,
+} from "../../api/prescriptions.js";
 import { useAuth } from "../../hooks/useAuth.js";
 import { usePatients } from "../../hooks/usePatients.js";
 import ProLayout from "../../layouts/ProLayout.jsx";
 
 export default function PrescriptionsEditor() {
+  const navigate = useNavigate();
+  const { prescriptionId } = useParams();
   const [searchParams] = useSearchParams();
   const [patientId, setPatientId] = useState("");
   const [meds, setMeds] = useState([
@@ -23,17 +29,43 @@ export default function PrescriptionsEditor() {
     },
   ]);
 
+  const isEditing = !!prescriptionId;
+
   // Récupérer le docteur connecté et la liste des patients
   const { user: doctor } = useAuth();
   const { data: patients, isLoading: patientsLoading } = usePatients();
 
-  // Pré-remplir le patient si fourni dans l'URL
+  // Récupérer la prescription existante si en mode édition
+  const { data: existingPrescription, isLoading: prescriptionLoading } =
+    useQuery({
+      queryKey: ["prescription", prescriptionId],
+      queryFn: () => getPrescription(prescriptionId),
+      enabled: isEditing,
+    });
+
+  // Pré-remplir les données
   useEffect(() => {
-    const patientIdFromUrl = searchParams.get("patientId");
-    if (patientIdFromUrl) {
-      setPatientId(patientIdFromUrl);
+    if (isEditing && existingPrescription) {
+      setPatientId(existingPrescription.patient_id || "");
+      setMeds(
+        existingPrescription.medications || [
+          {
+            name: "",
+            dosage: "",
+            intake: "",
+            frequency: 1,
+            duration_days: 3,
+            instructions: "",
+          },
+        ]
+      );
+    } else {
+      const patientIdFromUrl = searchParams.get("patientId");
+      if (patientIdFromUrl) {
+        setPatientId(patientIdFromUrl);
+      }
     }
-  }, [searchParams]);
+  }, [isEditing, existingPrescription, searchParams]);
 
   const addMed = () =>
     setMeds((m) => [
@@ -51,13 +83,22 @@ export default function PrescriptionsEditor() {
   const setField = (idx, key, val) =>
     setMeds((m) => m.map((x, i) => (i === idx ? { ...x, [key]: val } : x)));
 
-  const mutation = useMutation({
+  const createMutation = useMutation({
     mutationFn: createPrescription,
-    onSuccess: ({ prescription }) => {
-      toast.success("Ordonnance créée ✅");
-      // Redirection douce : le patient la verra dans /patient/prescriptions
+    onSuccess: () => {
+      toast.success("Ordonnance créée avec succès ✅");
+      navigate("/pro/prescriptions");
     },
-    onError: (e) => toast.error(e.message || "Erreur création ordonnance"),
+    onError: (e) => toast.error(e.message || "Erreur lors de la création"),
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: (data) => updatePrescription(prescriptionId, data),
+    onSuccess: () => {
+      toast.success("Ordonnance mise à jour avec succès ✅");
+      navigate("/pro/prescriptions");
+    },
+    onError: (e) => toast.error(e.message || "Erreur lors de la mise à jour"),
   });
 
   const submit = (e) => {
@@ -68,14 +109,43 @@ export default function PrescriptionsEditor() {
       return toast.error(
         "Veuillez remplir le patient et chaque médicament (nom, dosage, prise)"
       );
-    mutation.mutate({
+
+    const payload = {
       patient_id: patientId,
-      medications: meds,
-    });
+      content: meds,
+    };
+
+    if (isEditing) {
+      updateMutation.mutate(payload);
+    } else {
+      createMutation.mutate(payload);
+    }
   };
 
+  const isLoading = patientsLoading || (isEditing && prescriptionLoading);
+  const isSubmitting = createMutation.isPending || updateMutation.isPending;
+
+  if (isLoading) {
+    return (
+      <ProLayout
+        title={isEditing ? "Modifier l'ordonnance" : "Créer une ordonnance"}
+      >
+        <div className="card grid place-items-center py-16">
+          <div className="flex items-center gap-2">
+            <div className="animate-spin h-4 w-4 rounded-full border-2 border-cyan-500 border-t-transparent"></div>
+            <span>
+              {isEditing ? "Chargement de l'ordonnance..." : "Chargement..."}
+            </span>
+          </div>
+        </div>
+      </ProLayout>
+    );
+  }
+
   return (
-    <ProLayout title="Créer une ordonnance">
+    <ProLayout
+      title={isEditing ? "Modifier l'ordonnance" : "Créer une ordonnance"}
+    >
       <div className="card">
         <form className="space-y-4" onSubmit={submit}>
           <div className="grid sm:grid-cols-2 gap-3">
@@ -176,8 +246,14 @@ export default function PrescriptionsEditor() {
           </div>
 
           <div className="pt-2 flex gap-2">
-            <button className="btn-primary" disabled={mutation.isPending}>
-              {mutation.isPending ? "Création…" : "Créer l’ordonnance"}
+            <button className="btn-primary" disabled={isSubmitting}>
+              {isSubmitting
+                ? isEditing
+                  ? "Mise à jour..."
+                  : "Création..."
+                : isEditing
+                ? "Mettre à jour l'ordonnance"
+                : "Créer l'ordonnance"}
             </button>
             <button type="button" className="btn-ghost">
               Annuler

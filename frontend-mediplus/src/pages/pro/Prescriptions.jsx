@@ -1,8 +1,8 @@
 // src/pages/pro/Prescriptions.jsx
-import { FileText, RefreshCw, User, X } from "lucide-react";
+import { FileText, Plus, RefreshCw, User, X } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import PrescriptionCard from "../../components/PrescriptionCard.jsx";
+import PrescriptionCardPro from "../../components/PrescriptionCardPro.jsx";
 import { usePatients } from "../../hooks/usePatients.js";
 import { usePrescriptions } from "../../hooks/usePrescriptions.js";
 import ProLayout from "../../layouts/ProLayout.jsx";
@@ -28,6 +28,10 @@ export default function Prescriptions() {
     navigate(`/pro/prescriptions/editor?patientId=${patient.id}`);
   };
 
+  const handleEditPrescription = (prescription) => {
+    navigate(`/pro/prescriptions/editor/${prescription.id}`);
+  };
+
   return (
     <ProLayout title="Mes prescriptions">
       <div className="mb-6 flex justify-between items-center">
@@ -38,23 +42,32 @@ export default function Prescriptions() {
             {prescriptions.length !== 1 ? "s" : ""}
           </p>
         </div>
-        <button
-          onClick={() => refetch()}
-          className="btn-secondary text-xs"
-          disabled={isLoading}
-        >
-          {isLoading ? (
-            <>
-              <RefreshCw size={14} className="animate-spin mr-2" />
-              Actualisation...
-            </>
-          ) : (
-            <>
-              <RefreshCw size={14} className="mr-2" />
-              Actualiser
-            </>
-          )}
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={() => refetch()}
+            className="btn-secondary text-xs"
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <>
+                <RefreshCw size={14} className="animate-spin mr-2" />
+                Actualisation...
+              </>
+            ) : (
+              <>
+                <RefreshCw size={14} className="mr-2" />
+                Actualiser
+              </>
+            )}
+          </button>
+          <button
+            onClick={() => handleCreatePrescription()}
+            className="btn-primary flex items-center gap-2"
+          >
+            <Plus size={16} />
+            Nouvelle ordonnance
+          </button>
+        </div>
       </div>
 
       {isLoading ? (
@@ -98,9 +111,10 @@ export default function Prescriptions() {
       ) : (
         <div className="grid gap-4">
           {prescriptions.map((prescription) => (
-            <PrescriptionCard
+            <PrescriptionCardPro
               key={prescription.id}
               prescription={prescription}
+              onEdit={handleEditPrescription}
             />
           ))}
         </div>

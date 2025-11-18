@@ -135,4 +135,79 @@ class PrescriptionController extends Controller
             'items' => $prescriptions
         ]);
     }
+
+    /**
+     * PUT /api/pro/prescriptions/{id}
+     * Modifier une prescription (médecin uniquement)
+     */
+    public function update(Request $request, $id)
+    {
+        $user = $request->user();
+        if (!$user->isDoctor()) {
+            return response()->json(['message' => 'Accès refusé'], 403);
+        }
+
+        $prescription = Prescription::where('doctor_id', $user->id)->findOrFail($id);
+
+        $data = $request->validate([
+            'patient_id' => 'sometimes|exists:users,id',
+            'appointment_id' => 'nullable|exists:appointments,id',
+            'content' => 'sometimes|array',
+        ]);
+
+        $prescription->update($data);
+
+        return response()->json([
+            'message' => 'Ordonnance mise à jour avec succès',
+            'prescription' => $prescription
+        ]);
+    }
+
+    /**
+     * DELETE /api/pro/prescriptions/{id}
+     * Supprimer une prescription (médecin uniquement)
+     */
+    public function destroy(Request $request, $id)
+    {
+        $user = $request->user();
+        if (!$user->isDoctor()) {
+            return response()->json(['message' => 'Accès refusé'], 403);
+        }
+
+        $prescription = Prescription::where('doctor_id', $user->id)->findOrFail($id);
+        $prescription->delete();
+
+        return response()->json(['message' => 'Ordonnance supprimée avec succès']);
+    }
+
+    /**
+     * GET /api/pro/prescriptions/{id}
+     * Afficher une prescription spécifique (médecin uniquement)
+     */
+    public function show(Request $request, $id)
+    {
+        $user = $request->user();
+        if (!$user->isDoctor()) {
+            return response()->json(['message' => 'Accès refusé'], 403);
+        }
+
+        $prescription = Prescription::where('doctor_id', $user->id)
+            ->with(['patient:id,name,email', 'doctor:id,name,email'])
+            ->findOrFail($id);
+
+        return response()->json([
+            'prescription' => [
+                'id' => $prescription->id,
+                'doctor_id' => $prescription->doctor_id,
+                'doctor_name' => $prescription->doctor->name ?? 'Médecin',
+                'patient_id' => $prescription->patient_id,
+                'patient_name' => $prescription->patient->name ?? 'Patient',
+                'created_at' => $prescription->created_at,
+                'updated_at' => $prescription->updated_at,
+                'medications' => $prescription->content ?? [],
+                'pdf_url' => $prescription->pdf_path ? asset('storage/' . $prescription->pdf_path) : null,
+                'qr_data' => $prescription->id,
+            ]
+        ]);
+    }
 }
