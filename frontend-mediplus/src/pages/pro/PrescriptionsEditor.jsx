@@ -48,7 +48,16 @@ export default function PrescriptionsEditor() {
     if (isEditing && existingPrescription) {
       setPatientId(existingPrescription.patient_id || "");
       setMeds(
-        existingPrescription.medications || [
+        (existingPrescription.medications || []).map((med) => ({
+          name: med.name || "",
+          dosage: med.dosage || "",
+          intake: Array.isArray(med.times)
+            ? med.times.join(", ")
+            : med.intake || "",
+          frequency: med.frequency || 1,
+          duration_days: med.duration_days || 3,
+          instructions: med.instructions || "",
+        })) || [
           {
             name: "",
             dosage: "",

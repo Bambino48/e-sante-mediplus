@@ -141,7 +141,7 @@ export default function AppRouter() {
           }
         />
         <Route
-          path="/pro/prescriptions/editor"
+          path="/pro/prescriptions/editor/:prescriptionId?"
           element={
             <ProtectedRoute roles={["doctor", "nurse", "pro"]}>
               <PrescriptionsEditor />
