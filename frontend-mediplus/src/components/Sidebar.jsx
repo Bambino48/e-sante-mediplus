@@ -20,6 +20,7 @@ import {
 import { Fragment } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth.js";
+import { usePatientUpcomingAppointments } from "../hooks/usePatientDashboard.js";
 import { useUIStore } from "../store/uiStore.js";
 
 const baseLink =
@@ -37,6 +38,13 @@ export default function Sidebar({
   const { user } = useAuth();
   const navigate = useNavigate();
   const groups = getGroupsBySection(section);
+
+  // ✅ Hook pour récupérer les rendez-vous à venir (seulement pour les patients)
+  const isPatient = section === "patient";
+  const upcomingAppointmentsQuery = usePatientUpcomingAppointments();
+  const upcomingAppointments = isPatient
+    ? upcomingAppointmentsQuery.data
+    : null;
 
   const handleClick = (item) => {
     if (setActiveView) setActiveView(item.key);
@@ -77,12 +85,12 @@ export default function Sidebar({
 
   return (
     <aside
-      className={`relative flex flex-col justify-between bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 shadow-sm transition-all duration-300 ${
+      className={`sticky top-0 flex flex-col justify-between bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 shadow-sm transition-all duration-300 h-screen ${
         sidebarOpen ? "min-w-64 w-64" : "w-20"
       } ${className}`}
     >
-      {/* === Haut : Photo + navigation === */}
-      <div className="p-3 flex flex-col flex-1 overflow-y-auto">
+      {/* === Haut : Photo (toujours visible) === */}
+      <div className="p-3 shrink-0">
         {/* ✅ Photo (toujours visible, mais adaptée à la taille) */}
         <div className="flex flex-col items-center mb-8">
           <div className="relative">
@@ -105,9 +113,11 @@ export default function Sidebar({
             </p>
           )}
         </div>
+      </div>
 
-        {/* ✅ Navigation */}
-        <nav className="space-y-4">
+      {/* === Milieu : Navigation === */}
+      <div className="flex-1 p-3">
+        <nav>
           {groups.map((g) => (
             <Fragment key={g.title}>
               {sidebarOpen && (
@@ -142,10 +152,21 @@ export default function Sidebar({
                       onClick={() => handleClick(it)}
                       className={`${baseLink} ${
                         isActive ? active : "text-slate-700 dark:text-slate-200"
+                      } ${
+                        it.key === "appointments" && section === "patient"
+                          ? "relative"
+                          : ""
                       }`}
                       title={it.label}
                     >
-                      <span className="text-lg">{it.icon}</span>
+                      <span className="text-lg relative">
+                        {it.icon}
+                        {it.key === "appointments" &&
+                          section === "patient" &&
+                          upcomingAppointments?.appointments?.length > 0 && (
+                            <span className="absolute -top-1 -right-1 h-2 w-2 bg-green-500 rounded-full"></span>
+                          )}
+                      </span>
                       <span className={`${sidebarOpen ? "" : "hidden"}`}>
                         {it.label}
                       </span>
@@ -159,11 +180,22 @@ export default function Sidebar({
                           isActive
                             ? active
                             : "text-slate-700 dark:text-slate-200"
+                        } ${
+                          it.key === "appointments" && section === "patient"
+                            ? "relative"
+                            : ""
                         }`
                       }
                       title={it.label}
                     >
-                      <span className="text-lg">{it.icon}</span>
+                      <span className="text-lg relative">
+                        {it.icon}
+                        {it.key === "appointments" &&
+                          section === "patient" &&
+                          upcomingAppointments?.appointments?.length > 0 && (
+                            <span className="absolute -top-1 -right-1 h-2 w-2 bg-green-500 rounded-full"></span>
+                          )}
+                      </span>
                       <span className={`${sidebarOpen ? "" : "hidden"}`}>
                         {it.label}
                       </span>

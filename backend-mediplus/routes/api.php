@@ -64,6 +64,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/patient/appointments', [AppointmentController::class, 'index']);
     Route::get('/patient/appointments/next', [AppointmentController::class, 'next']);
+    Route::get('/patient/appointments/upcoming', [AppointmentController::class, 'upcoming']);
     Route::post('/patient/appointments', [AppointmentController::class, 'store']);
     Route::put('/patient/appointments/{id}', [AppointmentController::class, 'update']);
     Route::delete('/patient/appointments/{id}', [AppointmentController::class, 'cancel']);
@@ -81,19 +82,20 @@ Route::middleware('auth:sanctum')->group(function () {
     // Phase 5 — Gestion des Prescriptions et Ordonnances
     // =======================================================
     Route::post('/pro/prescriptions', [PrescriptionController::class, 'store']);
+    Route::get('/pro/prescriptions', [PrescriptionController::class, 'doctorList']);
     Route::get('/patient/prescriptions', [PrescriptionController::class, 'patientList']);
     Route::get('/patient/prescriptions/{id}/download', [PrescriptionController::class, 'download']);
 
     // =======================================================
-    // Phase 5b — Gestion des Médicaments
+    // Phase 5b — Gestion des Médicaments (Temporairement désactivé - approche JSON utilisée)
     // =======================================================
-    Route::get('/medications', [MedicationController::class, 'index']);
-    Route::get('/medications/today', [MedicationController::class, 'today']);
-    Route::get('/medications/{id}', [MedicationController::class, 'show']);
-    Route::post('/medications', [MedicationController::class, 'store']);
-    Route::put('/medications/{id}', [MedicationController::class, 'update']);
-    Route::delete('/medications/{id}', [MedicationController::class, 'destroy']);
-    Route::get('/prescriptions/{prescriptionId}/medications', [MedicationController::class, 'byPrescription']);
+    // Route::get('/medications', [MedicationController::class, 'index']);
+    // Route::get('/medications/today', [MedicationController::class, 'today']);
+    // Route::get('/medications/{id}', [MedicationController::class, 'show']);
+    // Route::post('/medications', [MedicationController::class, 'store']);
+    // Route::put('/medications/{id}', [MedicationController::class, 'update']);
+    // Route::delete('/medications/{id}', [MedicationController::class, 'destroy']);
+    // Route::get('/prescriptions/{prescriptionId}/medications', [MedicationController::class, 'byPrescription']);
 
     // =======================================================
     // Phase 6 — Intelligence Artificielle de Triage Médical

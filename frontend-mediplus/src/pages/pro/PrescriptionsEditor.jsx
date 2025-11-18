@@ -1,17 +1,39 @@
 /* eslint-disable no-unused-vars */
 // src/pages/pro/PrescriptionsEditor.jsx
 import { useMutation } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
+import { useSearchParams } from "react-router-dom";
 import { createPrescription } from "../../api/prescriptions.js";
+import { useAuth } from "../../hooks/useAuth.js";
+import { usePatients } from "../../hooks/usePatients.js";
 import ProLayout from "../../layouts/ProLayout.jsx";
 
 export default function PrescriptionsEditor() {
+  const [searchParams] = useSearchParams();
   const [patientId, setPatientId] = useState("");
-  const [doctorId, setDoctorId] = useState("1"); // TODO: remplacer par l'id du docteur connecté
   const [meds, setMeds] = useState([
-    { name: "", dosage: "", frequency: 1, duration_days: 3, instructions: "" },
+    {
+      name: "",
+      dosage: "",
+      intake: "",
+      frequency: 1,
+      duration_days: 3,
+      instructions: "",
+    },
   ]);
+
+  // Récupérer le docteur connecté et la liste des patients
+  const { user: doctor } = useAuth();
+  const { data: patients, isLoading: patientsLoading } = usePatients();
+
+  // Pré-remplir le patient si fourni dans l'URL
+  useEffect(() => {
+    const patientIdFromUrl = searchParams.get("patientId");
+    if (patientIdFromUrl) {
+      setPatientId(patientIdFromUrl);
+    }
+  }, [searchParams]);
 
   const addMed = () =>
     setMeds((m) => [
@@ -19,6 +41,7 @@ export default function PrescriptionsEditor() {
       {
         name: "",
         dosage: "",
+        intake: "",
         frequency: 1,
         duration_days: 3,
         instructions: "",
@@ -39,14 +62,14 @@ export default function PrescriptionsEditor() {
 
   const submit = (e) => {
     e.preventDefault();
-    const valid = patientId && meds.every((m) => m.name && m.dosage);
+    const valid =
+      patientId && meds.every((m) => m.name && m.dosage && m.intake);
     if (!valid)
       return toast.error(
-        "Veuillez remplir le patient et chaque médicament (nom + dosage)"
+        "Veuillez remplir le patient et chaque médicament (nom, dosage, prise)"
       );
     mutation.mutate({
       patient_id: patientId,
-      doctor_id: doctorId,
       medications: meds,
     });
   };
@@ -57,20 +80,28 @@ export default function PrescriptionsEditor() {
         <form className="space-y-4" onSubmit={submit}>
           <div className="grid sm:grid-cols-2 gap-3">
             <div>
-              <label className="text-sm text-slate-500">Patient ID</label>
-              <input
+              <label className="text-sm text-slate-500">Patient</label>
+              <select
                 className="input"
                 value={patientId}
                 onChange={(e) => setPatientId(e.target.value)}
-                placeholder="ex: 42"
-              />
+                disabled={patientsLoading}
+              >
+                <option value="">Sélectionner un patient</option>
+                {patients?.map((patient) => (
+                  <option key={patient.id} value={patient.id}>
+                    {patient.name}
+                  </option>
+                ))}
+              </select>
             </div>
             <div>
-              <label className="text-sm text-slate-500">Docteur ID</label>
+              <label className="text-sm text-slate-500">Docteur</label>
               <input
                 className="input"
-                value={doctorId}
-                onChange={(e) => setDoctorId(e.target.value)}
+                value={doctor?.name || "Docteur non connecté"}
+                disabled
+                readOnly
               />
             </div>
           </div>
@@ -82,7 +113,7 @@ export default function PrescriptionsEditor() {
                 key={idx}
                 className="rounded-xl border border-slate-200 dark:border-slate-800 p-3"
               >
-                <div className="grid sm:grid-cols-2 gap-3">
+                <div className="grid sm:grid-cols-3 gap-3">
                   <input
                     className="input"
                     placeholder="Nom (ex: Amoxicilline)"
@@ -94,6 +125,12 @@ export default function PrescriptionsEditor() {
                     placeholder="Dosage (ex: 500 mg)"
                     value={m.dosage}
                     onChange={(e) => setField(idx, "dosage", e.target.value)}
+                  />
+                  <input
+                    className="input"
+                    placeholder="Prise (ex: matin, midi, soir)"
+                    value={m.intake}
+                    onChange={(e) => setField(idx, "intake", e.target.value)}
                   />
                   <input
                     className="input"
@@ -114,7 +151,7 @@ export default function PrescriptionsEditor() {
                     }
                   />
                   <input
-                    className="input sm:col-span-2"
+                    className="input sm:col-span-3"
                     placeholder="Instructions"
                     value={m.instructions}
                     onChange={(e) =>

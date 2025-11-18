@@ -7,6 +7,8 @@ use App\Models\User;
 use App\Models\DoctorProfile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 
 class DoctorController extends Controller
 {
@@ -280,45 +282,59 @@ class DoctorController extends Controller
         $user = $request->user();
         if (!$user->isDoctor()) return response()->json(['message' => 'Accès refusé'], 403);
 
-        // Statistiques des rendez-vous
-        $totalAppointments = \App\Models\Appointment::where('doctor_id', $user->id)->count();
-        $todayAppointments = \App\Models\Appointment::where('doctor_id', $user->id)
-            ->whereDate('scheduled_at', today())
-            ->count();
-        $weekAppointments = \App\Models\Appointment::where('doctor_id', $user->id)
-            ->whereBetween('scheduled_at', [now()->startOfWeek(), now()->endOfWeek()])
-            ->count();
+        try {
+            // Statistiques des rendez-vous
+            $totalAppointments = \App\Models\Appointment::where('doctor_id', $user->id)->count();
+            $todayAppointments = \App\Models\Appointment::where('doctor_id', $user->id)
+                ->whereDate('scheduled_at', today())
+                ->count();
+            $weekAppointments = \App\Models\Appointment::where('doctor_id', $user->id)
+                ->whereBetween('scheduled_at', [now()->startOfWeek(), now()->endOfWeek()])
+                ->count();
 
-        // Statistiques des patients (patients uniques)
-        $totalPatients = \App\Models\Appointment::where('doctor_id', $user->id)
-            ->distinct('patient_id')
-            ->count('patient_id');
+            // Statistiques des patients (patients uniques)
+            $totalPatients = \App\Models\Appointment::where('doctor_id', $user->id)
+                ->distinct('patient_id')
+                ->count('patient_id');
 
-        // Rendez-vous aujourd'hui avec détails
-        $todayAppointmentsDetails = \App\Models\Appointment::where('doctor_id', $user->id)
-            ->whereDate('scheduled_at', today())
-            ->with('patient:id,name,email')
-            ->orderBy('scheduled_at')
-            ->get(['id', 'scheduled_at', 'status', 'patient_id']);
+            // Rendez-vous aujourd'hui avec détails
+            $todayAppointmentsDetails = \App\Models\Appointment::where('doctor_id', $user->id)
+                ->whereDate('scheduled_at', today())
+                ->with('patient:id,name,email')
+                ->orderBy('scheduled_at')
+                ->get(['id', 'scheduled_at', 'status', 'patient_id']);
 
-        // Revenus (si il y a un système de paiement) - du mois en cours
-        $monthlyRevenue = \App\Models\Payment::whereHas('appointment', function ($q) use ($user) {
-            $q->where('doctor_id', $user->id)
-                ->where('status', 'completed')
-                ->whereMonth('scheduled_at', now()->month)
-                ->whereYear('scheduled_at', now()->year);
-        })->sum('amount') ?? 0;
+            // Revenus (si il y a un système de paiement) - du mois en cours
+            $monthlyRevenue = 0;
+            if (Schema::hasTable('payments')) {
+                $monthlyRevenue = \App\Models\Payment::whereHas('appointment', function ($q) use ($user) {
+                    $q->where('doctor_id', $user->id)
+                        ->where('status', 'completed')
+                        ->whereMonth('scheduled_at', now()->month)
+                        ->whereYear('scheduled_at', now()->year);
+                })->sum('amount') ?? 0;
+            }
 
-        // Tâches en attente (prescriptions non signées, etc.)
-        $pendingTasks = \App\Models\Prescription::where('doctor_id', $user->id)
-            ->where('status', 'pending')
-            ->count();
+            // Tâches en attente (prescriptions non signées, etc.)
+            $pendingTasks = \App\Models\Prescription::where('doctor_id', $user->id)
+                ->where('status', 'pending')
+                ->count();
 
-        return response()->json([
-            'appointments_today' => $todayAppointments,
-            'revenue_month' => $monthlyRevenue,
-            'pending_tasks' => $pendingTasks,
-        ]);
+            return response()->json([
+                'appointments_today' => $todayAppointments,
+                'revenue_month' => $monthlyRevenue,
+                'pending_tasks' => $pendingTasks,
+                'total_appointments' => $totalAppointments,
+                'total_patients' => $totalPatients,
+                'week_appointments' => $weekAppointments,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Erreur dans DoctorController@stats: ' . $e->getMessage());
+            return response()->json([
+                'message' => 'Erreur lors de la récupération des statistiques',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     // GET /api/doctor/patients (liste des patients du médecin avec leurs profils)

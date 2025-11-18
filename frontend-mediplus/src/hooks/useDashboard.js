@@ -5,7 +5,6 @@ import {
   getRecentConsultations,
 } from "../api/appointments.js";
 import { getUnreadNotifications } from "../api/notifications.js";
-import { getTodayMedications } from "../api/prescriptions.js";
 
 // ✅ Vérifier si l'utilisateur est authentifié
 function isAuthenticated() {
@@ -21,17 +20,6 @@ export function useNextAppointment() {
     enabled: isAuthenticated(), // ✅ Désactivé si non authentifié
     retry: 1,
     refetchInterval: 5 * 60 * 1000, // Rafraîchissement toutes les 5 minutes
-  });
-}
-
-// ✅ Hook pour les médicaments du jour
-export function useTodayMedications() {
-  return useQuery({
-    queryKey: ["todayMedications"],
-    queryFn: getTodayMedications,
-    enabled: isAuthenticated(), // ✅ Désactivé si non authentifié
-    retry: 1,
-    refetchInterval: 10 * 60 * 1000, // Rafraîchissement toutes les 10 minutes
   });
 }
 

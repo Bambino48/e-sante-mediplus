@@ -1,11 +1,32 @@
 // src/pages/pro/Prescriptions.jsx
-import { FileText, RefreshCw } from "lucide-react";
+import { FileText, RefreshCw, User, X } from "lucide-react";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import PrescriptionCard from "../../components/PrescriptionCard.jsx";
+import { usePatients } from "../../hooks/usePatients.js";
 import { usePrescriptions } from "../../hooks/usePrescriptions.js";
 import ProLayout from "../../layouts/ProLayout.jsx";
 
 export default function Prescriptions() {
   const { data: prescriptions, isLoading, error, refetch } = usePrescriptions();
+  const { data: patients, isLoading: patientsLoading } = usePatients();
+  const [showPatientModal, setShowPatientModal] = useState(false);
+  const navigate = useNavigate();
+
+  const handleCreatePrescription = (patientId = null) => {
+    if (patientId) {
+      // Naviguer vers l'éditeur avec le patient pré-sélectionné
+      navigate(`/pro/prescriptions/editor?patientId=${patientId}`);
+    } else {
+      // Ouvrir la modal de sélection de patient
+      setShowPatientModal(true);
+    }
+  };
+
+  const handlePatientSelect = (patient) => {
+    setShowPatientModal(false);
+    navigate(`/pro/prescriptions/editor?patientId=${patient.id}`);
+  };
 
   return (
     <ProLayout title="Mes prescriptions">
@@ -67,7 +88,12 @@ export default function Prescriptions() {
           <p className="text-slate-500 dark:text-slate-400 mb-4">
             Vous n'avez pas encore émis de prescriptions.
           </p>
-          <button className="btn-primary">Créer une prescription</button>
+          <button
+            className="btn-primary"
+            onClick={() => handleCreatePrescription()}
+          >
+            Créer une prescription
+          </button>
         </div>
       ) : (
         <div className="grid gap-4">
@@ -77,6 +103,90 @@ export default function Prescriptions() {
               prescription={prescription}
             />
           ))}
+        </div>
+      )}
+
+      {/* Modal de sélection de patient */}
+      {showPatientModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl max-w-md w-full mx-4 max-h-[80vh] overflow-hidden">
+            <div className="flex items-center justify-between p-6 border-b border-slate-200 dark:border-slate-700">
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
+                Sélectionner un patient
+              </h3>
+              <button
+                onClick={() => setShowPatientModal(false)}
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            <div className="p-6 overflow-y-auto max-h-96">
+              {patientsLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="animate-spin h-6 w-6 rounded-full border-2 border-cyan-500 border-t-transparent mr-2"></div>
+                  <span>Chargement des patients...</span>
+                </div>
+              ) : patients && patients.length > 0 ? (
+                <div className="space-y-2">
+                  {patients.map((patient) => (
+                    <button
+                      key={patient.id}
+                      onClick={() => handlePatientSelect(patient)}
+                      className="w-full flex items-center gap-3 p-3 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors text-left"
+                    >
+                      <div className="shrink-0">
+                        <User size={20} className="text-slate-400" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-slate-900 dark:text-white truncate">
+                          {patient.name}
+                        </p>
+                        <p className="text-sm text-slate-500 dark:text-slate-400">
+                          {patient.totalAppointments} rendez-vous
+                          {patient.upcomingAppointments > 0 && (
+                            <span className="ml-2 text-cyan-600 dark:text-cyan-400">
+                              • {patient.upcomingAppointments} à venir
+                            </span>
+                          )}
+                        </p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <User size={48} className="mx-auto mb-4 text-slate-400" />
+                  <p className="text-slate-500 dark:text-slate-400">
+                    Aucun patient trouvé
+                  </p>
+                  <p className="text-sm text-slate-400 dark:text-slate-500 mt-1">
+                    Vous devez avoir des rendez-vous planifiés pour voir vos
+                    patients ici
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <div className="flex gap-3 p-6 border-t border-slate-200 dark:border-slate-700">
+              <button
+                onClick={() => setShowPatientModal(false)}
+                className="flex-1 btn-secondary"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={() => {
+                  setShowPatientModal(false);
+                  navigate("/pro/prescriptions/editor");
+                }}
+                className="flex-1 btn-primary"
+              >
+                Créer sans patient
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </ProLayout>

@@ -23,7 +23,6 @@ import { useAuth } from "../../hooks/useAuth";
 import {
   useNextAppointment,
   useRecentConsultations,
-  useTodayMedications,
   useUnreadNotifications,
 } from "../../hooks/useDashboard.js";
 import { useGeo } from "../../hooks/useGeo";
@@ -102,11 +101,6 @@ export default function PatientDashboard() {
     error: appointmentError,
   } = useNextAppointment();
   const {
-    data: medicationsData,
-    isLoading: loadingMedications,
-    error: medicationsError,
-  } = useTodayMedications();
-  const {
     data: notificationsData,
     isLoading: loadingNotifications,
     error: notificationsError,
@@ -149,7 +143,7 @@ export default function PatientDashboard() {
   };
 
   const handlePrescriptionsClick = (e) => {
-    if (!medicationsData?.items || medicationsData.items.length === 0) {
+    if (!todayMedications?.items || todayMedications.items.length === 0) {
       e.preventDefault();
       toast("Vous n'avez aucun médicament à prendre aujourd'hui", {
         icon: "💊",
@@ -270,29 +264,25 @@ export default function PatientDashboard() {
                     Médicaments
                   </span>
                 </div>
-                {loadingMedications ? (
+                {loadingTodayMedications ? (
                   <div className="flex items-center gap-2 text-cyan-600">
                     <Clock className="h-3 w-3 animate-spin" />
                     <span className="text-xs">Chargement...</span>
-                  </div>
-                ) : medicationsError ? (
-                  <div className="text-xs text-red-600 dark:text-red-400">
-                    Erreur de chargement
                   </div>
                 ) : !isAuthenticated ? (
                   <div className="text-xs text-cyan-600 dark:text-cyan-400">
                     Connectez-vous pour voir vos médicaments
                   </div>
-                ) : medicationsData?.items &&
-                  medicationsData.items.length > 0 ? (
+                ) : todayMedications?.items &&
+                  todayMedications.items.length > 0 ? (
                   <div className="space-y-1">
                     <div className="text-xs text-cyan-700 dark:text-cyan-300 font-medium">
-                      {medicationsData.items.length} médicament
-                      {medicationsData.items.length > 1 ? "s" : ""} à prendre
+                      {todayMedications.items.length} médicament
+                      {todayMedications.items.length > 1 ? "s" : ""} à prendre
                     </div>
                     <div className="text-xs text-cyan-600 dark:text-cyan-400">
                       Prochaine prise:{" "}
-                      {medicationsData.items[0]?.times?.[0] || "À définir"}
+                      {todayMedications.items[0]?.times?.[0] || "À définir"}
                     </div>
                   </div>
                 ) : (
@@ -661,14 +651,10 @@ export default function PatientDashboard() {
               <ClipboardList className="h-4 w-4" />
               Médicaments du jour
             </div>
-            {loadingMedications ? (
+            {loadingTodayMedications ? (
               <div className="mt-3 flex items-center gap-2 text-slate-400">
                 <Clock className="h-4 w-4 animate-spin" />
                 <span className="text-sm">Chargement...</span>
-              </div>
-            ) : medicationsError ? (
-              <div className="mt-3 text-sm text-red-600 dark:text-red-400">
-                Erreur de chargement des médicaments
               </div>
             ) : !isAuthenticated ? (
               <motion.div
@@ -1522,7 +1508,7 @@ export default function PatientDashboard() {
               whileHover={{ scale: 1.03 }}
               transition={{ duration: 0.2 }}
               className={`card border-t-4 bg-white dark:bg-slate-900 cursor-pointer ${
-                medicationsData?.items && medicationsData.items.length > 0
+                todayMedications?.items && todayMedications.items.length > 0
                   ? "border-t-blue-500 shadow-blue-100 dark:shadow-blue-900/20"
                   : "border-t-blue-400"
               }`}
@@ -1531,8 +1517,8 @@ export default function PatientDashboard() {
               <div className="flex items-start gap-3">
                 <div className="p-3 bg-blue-50 dark:bg-slate-800 rounded-xl relative">
                   <Video className="h-5 w-5 text-blue-500" />
-                  {medicationsData?.items &&
-                    medicationsData.items.length > 0 && (
+                  {todayMedications?.items &&
+                    todayMedications.items.length > 0 && (
                       <div className="absolute -top-1 -right-1 w-3 h-3 bg-blue-500 rounded-full border-2 border-white dark:border-slate-900"></div>
                     )}
                 </div>
@@ -1541,15 +1527,16 @@ export default function PatientDashboard() {
                     <h3 className="font-semibold text-slate-800 dark:text-slate-100">
                       Téléconsultation
                     </h3>
-                    {medicationsData?.items &&
-                      medicationsData.items.length > 0 && (
+                    {todayMedications?.items &&
+                      todayMedications.items.length > 0 && (
                         <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs font-medium rounded">
                           Recommandé
                         </span>
                       )}
                   </div>
                   <p className="text-sm text-slate-500 dark:text-slate-400">
-                    {medicationsData?.items && medicationsData.items.length > 0
+                    {todayMedications?.items &&
+                    todayMedications.items.length > 0
                       ? "Parfait pour suivre votre traitement"
                       : "Consultez un médecin en ligne en direct."}
                   </p>
@@ -1591,7 +1578,7 @@ export default function PatientDashboard() {
               whileHover={{ scale: 1.03 }}
               transition={{ duration: 0.2 }}
               className={`card border-t-4 bg-white dark:bg-slate-900 cursor-pointer ${
-                medicationsData?.items && medicationsData.items.length > 0
+                todayMedications?.items && todayMedications.items.length > 0
                   ? "border-t-cyan-500 shadow-cyan-100 dark:shadow-cyan-900/20"
                   : "border-t-cyan-400"
               }`}
@@ -1600,8 +1587,8 @@ export default function PatientDashboard() {
               <div className="flex items-start gap-3">
                 <div className="p-3 bg-cyan-50 dark:bg-slate-800 rounded-xl relative">
                   <ClipboardList className="h-5 w-5 text-cyan-500" />
-                  {medicationsData?.items &&
-                    medicationsData.items.length > 0 && (
+                  {todayMedications?.items &&
+                    todayMedications.items.length > 0 && (
                       <div className="absolute -top-1 -right-1 w-3 h-3 bg-cyan-500 rounded-full border-2 border-white dark:border-slate-900"></div>
                     )}
                 </div>
@@ -1610,16 +1597,17 @@ export default function PatientDashboard() {
                     <h3 className="font-semibold text-slate-800 dark:text-slate-100">
                       Mes ordonnances
                     </h3>
-                    {medicationsData?.items &&
-                      medicationsData.items.length > 0 && (
+                    {todayMedications?.items &&
+                      todayMedications.items.length > 0 && (
                         <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-cyan-100 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-300 text-xs font-medium rounded">
-                          {medicationsData.items.length} actif
-                          {medicationsData.items.length > 1 ? "s" : ""}
+                          {todayMedications.items.length} actif
+                          {todayMedications.items.length > 1 ? "s" : ""}
                         </span>
                       )}
                   </div>
                   <p className="text-sm text-slate-500 dark:text-slate-400">
-                    {medicationsData?.items && medicationsData.items.length > 0
+                    {todayMedications?.items &&
+                    todayMedications.items.length > 0
                       ? "Suivez vos traitements en cours"
                       : "Accédez à vos prescriptions et traitements."}
                   </p>

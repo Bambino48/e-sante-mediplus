@@ -1,92 +1,73 @@
 // src/api/prescriptions.js
 import api from "./axiosInstance.js";
 
-// ✅ API Réelles - Médicaments à prendre aujourd'hui
-export async function getTodayMedications() {
-  const { data } = await api.get("/medications/today");
-  return data; // { items: [...] }
-}
-
 // ✅ API Réelles - Liste des ordonnances du patient
 export async function getPatientPrescriptions() {
   const { data } = await api.get("/patient/prescriptions");
   return data; // { items: [...] }
 }
 
-// Mock local en attendant Laravel. Les données sont en mémoire (réinitialisées au refresh).
-const DB = {
-  prescriptions: [],
-  medications: [],
-};
-
+// ✅ API Réelles - Créer une ordonnance (Laravel)
 export async function createPrescription(payload) {
-  // payload: { doctor_id, patient_id, medications: [{ name, dosage, frequency, duration_days, instructions }] }
-  if (
-    !payload?.doctor_id ||
-    !payload?.patient_id ||
-    !Array.isArray(payload?.medications)
-  ) {
-    throw new Error("Données d’ordonnance incomplètes");
+  // payload: { patient_id, medications: [{ name, dosage, posology, intake, frequency, duration_days, instructions }] }
+  if (!payload?.patient_id || !Array.isArray(payload?.medications)) {
+    throw new Error("Données d'ordonnance incomplètes");
   }
 
-  const id = crypto.randomUUID();
-  const pdf_url = `https://example.com/prescription/${id}.pdf`;
-  const qr_data = JSON.stringify({ id, patient_id: payload.patient_id });
-
-  const presc = {
-    id,
-    doctor_id: payload.doctor_id,
-    patient_id: payload.patient_id,
-    created_at: new Date().toISOString(),
-    status: "signed",
-    pdf_url,
-    qr_data,
-  };
-
-  DB.prescriptions.unshift(presc);
-
-  // créer les médicaments rattachés
-  payload.medications.forEach((m) => {
-    DB.medications.push({
-      id: crypto.randomUUID(),
-      prescription_id: id,
-      name: m.name,
-      dosage: m.dosage,
-      frequency: Number(m.frequency) || 1, // prises / jour
-      duration_days: Number(m.duration_days) || 1,
-      instructions: m.instructions || "",
-      adherence: [], // { dateISO, taken: true }
-    });
-  });
-
-  return { prescription: presc };
-}
-
-export async function listPrescriptionsByPatient(patient_id) {
-  const presc = DB.prescriptions.filter((p) => p.patient_id === patient_id);
-  const meds = DB.medications.filter((m) =>
-    presc.some((p) => p.id === m.prescription_id)
-  );
-  // regrouper
-  const items = presc.map((p) => ({
-    ...p,
-    medications: meds.filter((m) => m.prescription_id === p.id),
+  // Transformer les données pour correspondre au format attendu par Laravel
+  const content = payload.medications.map((med) => ({
+    name: med.name,
+    dosage: med.dosage,
+    frequency: med.frequency,
+    times: med.intake ? med.intake.split(",").map((t) => t.trim()) : [],
+    duration_days: med.duration_days,
+    instructions: med.instructions || "",
+    // Pour l'instant on ne gère pas posology séparément côté backend
   }));
-  return { items };
+
+  try {
+    // Appel à l'API Laravel réelle
+    const { data } = await api.post("/pro/prescriptions", {
+      patient_id: payload.patient_id,
+      content: content,
+    });
+
+    return data;
+  } catch (error) {
+    // Fallback vers le mock local en cas d'erreur
+    console.warn(
+      "Erreur API Laravel, utilisation du mock local:",
+      error.message
+    );
+    throw error; // Remonter l'erreur pour que l'UI la gère
+  }
 }
 
-// eslint-disable-next-line no-unused-vars
-export async function listPrescriptionsByDoctor(_doctor_id) {
-  // TODO: Replace with real API call when backend route is available
-  // const { data } = await api.get(`/doctor/prescriptions`);
-  // return data;
-
-  // For now, return empty array to avoid errors
-  return { items: [] };
+// ✅ API Réelles - Liste des ordonnances du docteur
+export async function getDoctorPrescriptions() {
+  const { data } = await api.get("/pro/prescriptions");
+  return data; // { items: [...] }
 }
+
+// Fonctions de compatibilité pour les anciens appels
+export async function listPrescriptionsByDoctor(doctor_id) {
+  try {
+    const result = await getDoctorPrescriptions();
+    return result;
+  } catch (error) {
+    console.warn("Erreur getDoctorPrescriptions:", error.message);
+    return { items: [] };
+  }
+}
+
 export async function markDoseTaken(medication_id) {
-  const med = DB.medications.find((m) => m.id === medication_id);
-  if (!med) throw new Error("Médicament introuvable");
-  med.adherence.push({ dateISO: new Date().toISOString(), taken: true });
-  return { ok: true, medication: med };
+  try {
+    // TODO: Implémenter l'API backend pour marquer une dose comme prise
+    // const { data } = await api.post(`/medications/${medication_id}/taken`);
+    console.log("Dose marquée comme prise pour le médicament:", medication_id);
+    return { ok: true };
+  } catch (error) {
+    console.warn("Erreur markDoseTaken:", error.message);
+    throw error;
+  }
 }

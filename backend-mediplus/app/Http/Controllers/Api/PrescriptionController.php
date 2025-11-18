@@ -40,8 +40,23 @@ class PrescriptionController extends Controller
             return response()->json(['message' => 'Accès refusé'], 403);
         }
 
-        $prescriptions = Prescription::where('patient_id', $user->id)->get();
-        return response()->json(['prescriptions' => $prescriptions]);
+        $prescriptions = Prescription::where('patient_id', $user->id)
+            ->with(['doctor:id,name,email'])
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->map(function ($prescription) {
+                return [
+                    'id' => $prescription->id,
+                    'doctor_id' => $prescription->doctor_id,
+                    'doctor_name' => $prescription->doctor->name ?? 'Médecin',
+                    'created_at' => $prescription->created_at,
+                    'medications' => $prescription->content ?? [],
+                    'pdf_url' => $prescription->pdf_path ? asset('storage/' . $prescription->pdf_path) : null,
+                    'qr_data' => $prescription->id,
+                ];
+            });
+
+        return response()->json(['items' => $prescriptions]);
     }
 
     // GET /api/patient/prescriptions/{id}/download
@@ -65,12 +80,59 @@ class PrescriptionController extends Controller
 
         // Récupérer les prescriptions du patient (pas de colonne status/end_date dans la table actuelle)
         $activePrescriptions = Prescription::where('patient_id', $user->id)
+            ->with(['doctor:id,name,email'])
             ->orderBy('created_at', 'desc')
-            ->get();
+            ->get()
+            ->map(function ($prescription) {
+                return [
+                    'id' => $prescription->id,
+                    'doctor_id' => $prescription->doctor_id,
+                    'doctor_name' => $prescription->doctor->name ?? 'Médecin',
+                    'created_at' => $prescription->created_at,
+                    'medications' => $prescription->content ?? [],
+                    'pdf_url' => $prescription->pdf_path ? asset('storage/' . $prescription->pdf_path) : null,
+                    'qr_data' => $prescription->id,
+                ];
+            });
 
         return response()->json([
             'message' => 'Prescriptions récupérées avec succès',
             'items' => $activePrescriptions
+        ]);
+    }
+
+    /**
+     * GET /api/pro/prescriptions
+     * Liste des prescriptions créées par le docteur connecté
+     */
+    public function doctorList(Request $request)
+    {
+        $user = $request->user();
+        if (!$user->isDoctor()) {
+            return response()->json(['message' => 'Accès refusé'], 403);
+        }
+
+        $prescriptions = Prescription::where('doctor_id', $user->id)
+            ->with(['patient:id,name,email', 'doctor:id,name,email'])
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->map(function ($prescription) {
+                return [
+                    'id' => $prescription->id,
+                    'doctor_id' => $prescription->doctor_id,
+                    'doctor_name' => $prescription->doctor->name ?? 'Médecin',
+                    'patient_id' => $prescription->patient_id,
+                    'patient_name' => $prescription->patient->name ?? 'Patient',
+                    'created_at' => $prescription->created_at,
+                    'medications' => $prescription->content ?? [],
+                    'pdf_url' => $prescription->pdf_path ? asset('storage/' . $prescription->pdf_path) : null,
+                    'qr_data' => $prescription->id,
+                ];
+            });
+
+        return response()->json([
+            'message' => 'Prescriptions récupérées avec succès',
+            'items' => $prescriptions
         ]);
     }
 }
