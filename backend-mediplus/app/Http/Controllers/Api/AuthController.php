@@ -83,11 +83,16 @@ class AuthController extends Controller
 
         $data = $request->validate([
             'name' => 'sometimes|string|max:120',
+            'email' => 'sometimes|email|unique:users,email,' . $user->id,
             'phone' => 'sometimes|string|max:30|nullable',
-            'photo' => 'sometimes|nullable', // Accepte fichier ou string
             'latitude' => 'sometimes|numeric|nullable',
             'longitude' => 'sometimes|numeric|nullable',
         ]);
+
+        // Convertir les chaînes vides en null
+        $data = array_map(function ($value) {
+            return $value === '' ? null : $value;
+        }, $data);
 
         // Traitement de la photo
         if ($request->hasFile('photo') && $request->file('photo')->isValid()) {

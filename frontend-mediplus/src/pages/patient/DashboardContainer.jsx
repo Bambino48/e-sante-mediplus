@@ -37,7 +37,7 @@ export default function DashboardContainer() {
     teleconsult: <Teleconsult />,
     triage: <Triage />,
     prescriptions: <Prescriptions />,
-    appointments: <Appointments />,
+    appointments: <Appointments useLayout={false} />,
     booking: <Booking />,
   };
 

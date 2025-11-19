@@ -320,7 +320,7 @@ function AppointmentDetailsModal({ appointment, onClose, onCancel }) {
   );
 }
 
-export default function Appointments() {
+export default function Appointments({ useLayout = true }) {
   const [filter, setFilter] = useState("upcoming"); // "upcoming" | "past" | "all"
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const queryClient = useQueryClient();
@@ -430,224 +430,234 @@ export default function Appointments() {
   };
 
   if (isLoading) {
-    return (
-      <PatientLayout title="Mes rendez-vous">
-        <div className="max-w-6xl mx-auto">
-          <div className="flex items-center justify-center min-h-[400px]">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-600"></div>
-          </div>
+    const loadingContent = (
+      <div className="max-w-6xl mx-auto">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-600"></div>
         </div>
-      </PatientLayout>
+      </div>
+    );
+    return useLayout ? (
+      <PatientLayout title="Mes rendez-vous">{loadingContent}</PatientLayout>
+    ) : (
+      loadingContent
     );
   }
 
   if (error) {
-    return (
-      <PatientLayout title="Mes rendez-vous">
-        <div className="max-w-6xl mx-auto">
-          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6 text-center">
-            <p className="text-red-800 dark:text-red-200">
-              Erreur lors du chargement des rendez-vous
-            </p>
-          </div>
+    const errorContent = (
+      <div className="max-w-6xl mx-auto">
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6 text-center">
+          <p className="text-red-800 dark:text-red-200">
+            Erreur lors du chargement des rendez-vous
+          </p>
         </div>
-      </PatientLayout>
+      </div>
+    );
+    return useLayout ? (
+      <PatientLayout title="Mes rendez-vous">{errorContent}</PatientLayout>
+    ) : (
+      errorContent
     );
   }
 
-  return (
-    <PatientLayout title="Mes rendez-vous">
-      <div className="max-w-6xl mx-auto">
-        {/* Bouton nouveau rendez-vous */}
-        <div className="flex justify-end mb-6">
+  const mainContent = (
+    <div className="max-w-6xl mx-auto">
+      {/* Bouton nouveau rendez-vous */}
+      <div className="flex justify-end mb-6">
+        <button
+          onClick={() => (window.location.href = "/search")}
+          className="flex items-center gap-2 px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition"
+        >
+          <Plus size={18} />
+          <span>Nouveau rendez-vous</span>
+        </button>
+      </div>
+
+      {/* Filtres */}
+      <div className="flex gap-2">
+        <button
+          onClick={() => setFilter("upcoming")}
+          className={`px-4 py-2 rounded-lg transition ${
+            filter === "upcoming"
+              ? "bg-cyan-600 text-white"
+              : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
+          }`}
+        >
+          À venir ({upcomingCount})
+        </button>
+        <button
+          onClick={() => setFilter("past")}
+          className={`px-4 py-2 rounded-lg transition ${
+            filter === "past"
+              ? "bg-cyan-600 text-white"
+              : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
+          }`}
+        >
+          Passés ({pastCount})
+        </button>
+        <button
+          onClick={() => setFilter("all")}
+          className={`px-4 py-2 rounded-lg transition ${
+            filter === "all"
+              ? "bg-cyan-600 text-white"
+              : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
+          }`}
+        >
+          Tous ({appointments.length})
+        </button>
+      </div>
+
+      {/* ✅ Section Prochain Rendez-vous avec Statut */}
+      {nextAppointment && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-linear-to-r from-cyan-50 to-blue-50 dark:from-cyan-900/20 dark:to-blue-900/20 border border-cyan-200 dark:border-cyan-800 rounded-xl p-6 shadow-sm"
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-cyan-100 dark:bg-cyan-800/50 rounded-full">
+                <Calendar className="h-6 w-6 text-cyan-600 dark:text-cyan-400" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
+                  Prochain rendez-vous
+                </h3>
+                <div className="flex items-center gap-4 mt-2">
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-slate-500" />
+                    <span className="text-sm text-slate-600 dark:text-slate-400">
+                      {new Date(
+                        nextAppointment.scheduled_at
+                      ).toLocaleDateString("fr-FR", {
+                        weekday: "long",
+                        day: "numeric",
+                        month: "long",
+                        year: "numeric",
+                      })}{" "}
+                      à{" "}
+                      {new Date(
+                        nextAppointment.scheduled_at
+                      ).toLocaleTimeString("fr-FR", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-slate-600 dark:text-slate-400">
+                      avec
+                    </span>
+                    <span className="font-medium text-slate-900 dark:text-white">
+                      {nextAppointment.doctor_name ||
+                        nextAppointment.doctor?.name ||
+                        `Dr ${nextAppointment.doctor_id}`}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <span
+                className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(
+                  nextAppointment.status
+                )}`}
+              >
+                {getStatusLabel(nextAppointment.status)}
+              </span>
+              {nextAppointment.status === "confirmed" && (
+                <div className="flex items-center gap-1 text-green-600 dark:text-green-400">
+                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                  <span className="text-xs font-medium">Confirmé</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Barre de progression temporelle */}
+          <div className="mt-4">
+            <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mb-1">
+              <span>Statut du rendez-vous</span>
+              <span>
+                {Math.max(
+                  0,
+                  Math.ceil(
+                    (new Date(nextAppointment.scheduled_at) - now) /
+                      (1000 * 60 * 60 * 24)
+                  )
+                )}{" "}
+                jours restants
+              </span>
+            </div>
+            <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
+              <div
+                className={`h-2 rounded-full transition-all duration-300 ${
+                  nextAppointment.status === "confirmed"
+                    ? "bg-green-500"
+                    : nextAppointment.status === "pending"
+                    ? "bg-yellow-500"
+                    : "bg-blue-500"
+                }`}
+                style={{
+                  width:
+                    nextAppointment.status === "confirmed"
+                      ? "100%"
+                      : nextAppointment.status === "pending"
+                      ? "60%"
+                      : "80%",
+                }}
+              ></div>
+            </div>
+          </div>
+        </motion.div>
+      )}
+
+      {/* Liste des rendez-vous */}
+      {filteredAppointments.length === 0 ? (
+        <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-12 text-center">
+          <Calendar className="h-16 w-16 text-slate-400 mx-auto mb-4" />
+          <p className="text-slate-600 dark:text-slate-400 text-lg">
+            {filter === "upcoming"
+              ? "Aucun rendez-vous à venir"
+              : filter === "past"
+              ? "Aucun rendez-vous passé"
+              : "Aucun rendez-vous enregistré"}
+          </p>
           <button
             onClick={() => (window.location.href = "/search")}
-            className="flex items-center gap-2 px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition"
+            className="mt-4 px-6 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition"
           >
-            <Plus size={18} />
-            <span>Nouveau rendez-vous</span>
+            Prendre un rendez-vous
           </button>
         </div>
-
-        {/* Filtres */}
-        <div className="flex gap-2">
-          <button
-            onClick={() => setFilter("upcoming")}
-            className={`px-4 py-2 rounded-lg transition ${
-              filter === "upcoming"
-                ? "bg-cyan-600 text-white"
-                : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
-            }`}
-          >
-            À venir ({upcomingCount})
-          </button>
-          <button
-            onClick={() => setFilter("past")}
-            className={`px-4 py-2 rounded-lg transition ${
-              filter === "past"
-                ? "bg-cyan-600 text-white"
-                : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
-            }`}
-          >
-            Passés ({pastCount})
-          </button>
-          <button
-            onClick={() => setFilter("all")}
-            className={`px-4 py-2 rounded-lg transition ${
-              filter === "all"
-                ? "bg-cyan-600 text-white"
-                : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
-            }`}
-          >
-            Tous ({appointments.length})
-          </button>
+      ) : (
+        <div className="grid gap-4">
+          {filteredAppointments.map((apt) => (
+            <AppointmentCard
+              key={apt.id}
+              appointment={apt}
+              onView={() => setSelectedAppointment(apt)}
+              onCancel={() => handleCancel(apt.id)}
+            />
+          ))}
         </div>
+      )}
 
-        {/* ✅ Section Prochain Rendez-vous avec Statut */}
-        {nextAppointment && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-linear-to-r from-cyan-50 to-blue-50 dark:from-cyan-900/20 dark:to-blue-900/20 border border-cyan-200 dark:border-cyan-800 rounded-xl p-6 shadow-sm"
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="p-3 bg-cyan-100 dark:bg-cyan-800/50 rounded-full">
-                  <Calendar className="h-6 w-6 text-cyan-600 dark:text-cyan-400" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
-                    Prochain rendez-vous
-                  </h3>
-                  <div className="flex items-center gap-4 mt-2">
-                    <div className="flex items-center gap-2">
-                      <Clock className="h-4 w-4 text-slate-500" />
-                      <span className="text-sm text-slate-600 dark:text-slate-400">
-                        {new Date(
-                          nextAppointment.scheduled_at
-                        ).toLocaleDateString("fr-FR", {
-                          weekday: "long",
-                          day: "numeric",
-                          month: "long",
-                          year: "numeric",
-                        })}{" "}
-                        à{" "}
-                        {new Date(
-                          nextAppointment.scheduled_at
-                        ).toLocaleTimeString("fr-FR", {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-slate-600 dark:text-slate-400">
-                        avec
-                      </span>
-                      <span className="font-medium text-slate-900 dark:text-white">
-                        {nextAppointment.doctor_name ||
-                          nextAppointment.doctor?.name ||
-                          `Dr ${nextAppointment.doctor_id}`}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <span
-                  className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(
-                    nextAppointment.status
-                  )}`}
-                >
-                  {getStatusLabel(nextAppointment.status)}
-                </span>
-                {nextAppointment.status === "confirmed" && (
-                  <div className="flex items-center gap-1 text-green-600 dark:text-green-400">
-                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                    <span className="text-xs font-medium">Confirmé</span>
-                  </div>
-                )}
-              </div>
-            </div>
+      {/* Modal détails */}
+      {selectedAppointment && (
+        <AppointmentDetailsModal
+          appointment={selectedAppointment}
+          onClose={() => setSelectedAppointment(null)}
+          onCancel={() => handleCancel(selectedAppointment.id)}
+        />
+      )}
+    </div>
+  );
 
-            {/* Barre de progression temporelle */}
-            <div className="mt-4">
-              <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mb-1">
-                <span>Statut du rendez-vous</span>
-                <span>
-                  {Math.max(
-                    0,
-                    Math.ceil(
-                      (new Date(nextAppointment.scheduled_at) - now) /
-                        (1000 * 60 * 60 * 24)
-                    )
-                  )}{" "}
-                  jours restants
-                </span>
-              </div>
-              <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
-                <div
-                  className={`h-2 rounded-full transition-all duration-300 ${
-                    nextAppointment.status === "confirmed"
-                      ? "bg-green-500"
-                      : nextAppointment.status === "pending"
-                      ? "bg-yellow-500"
-                      : "bg-blue-500"
-                  }`}
-                  style={{
-                    width:
-                      nextAppointment.status === "confirmed"
-                        ? "100%"
-                        : nextAppointment.status === "pending"
-                        ? "60%"
-                        : "80%",
-                  }}
-                ></div>
-              </div>
-            </div>
-          </motion.div>
-        )}
-
-        {/* Liste des rendez-vous */}
-        {filteredAppointments.length === 0 ? (
-          <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-12 text-center">
-            <Calendar className="h-16 w-16 text-slate-400 mx-auto mb-4" />
-            <p className="text-slate-600 dark:text-slate-400 text-lg">
-              {filter === "upcoming"
-                ? "Aucun rendez-vous à venir"
-                : filter === "past"
-                ? "Aucun rendez-vous passé"
-                : "Aucun rendez-vous enregistré"}
-            </p>
-            <button
-              onClick={() => (window.location.href = "/search")}
-              className="mt-4 px-6 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition"
-            >
-              Prendre un rendez-vous
-            </button>
-          </div>
-        ) : (
-          <div className="grid gap-4">
-            {filteredAppointments.map((apt) => (
-              <AppointmentCard
-                key={apt.id}
-                appointment={apt}
-                onView={() => setSelectedAppointment(apt)}
-                onCancel={() => handleCancel(apt.id)}
-              />
-            ))}
-          </div>
-        )}
-
-        {/* Modal détails */}
-        {selectedAppointment && (
-          <AppointmentDetailsModal
-            appointment={selectedAppointment}
-            onClose={() => setSelectedAppointment(null)}
-            onCancel={() => handleCancel(selectedAppointment.id)}
-          />
-        )}
-      </div>
-    </PatientLayout>
+  return useLayout ? (
+    <PatientLayout title="Mes rendez-vous">{mainContent}</PatientLayout>
+  ) : (
+    mainContent
   );
 }

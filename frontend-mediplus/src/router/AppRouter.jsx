@@ -1,5 +1,4 @@
 import { Navigate, Route, Routes } from "react-router-dom";
-import Navbar from "../components/Navbar.jsx"; // ✅ ajouté
 
 // 🩺 Pages Patient
 import PatientAppointments from "../pages/patient/Appointments.jsx";
@@ -49,183 +48,177 @@ import Pricing from "../pages/static/Pricing.jsx";
 
 export default function AppRouter() {
   return (
-    <>
-      <Navbar /> {/* ✅ toujours visible */}
-      <Routes>
-        {/* Public */}
-        <Route path="/" element={<PatientHome />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
+    <Routes>
+      {/* Public */}
+      <Route path="/" element={<PatientHome />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
 
-        {/* Pages statiques */}
-        <Route path="/pricing" element={<Pricing />} />
-        <Route path="/about" element={<About />} />
-        <Route path="/contact" element={<Contact />} />
+      {/* Pages statiques */}
+      <Route path="/pricing" element={<Pricing />} />
+      <Route path="/about" element={<About />} />
+      <Route path="/contact" element={<Contact />} />
 
-        {/* Patient */}
-        <Route path="/search" element={<Search />} />
-        <Route path="/booking/:doctorId" element={<Booking />} />
-        <Route path="/teleconsult/:roomId" element={<Teleconsult />} />
-        <Route
-          path="/patient/prescriptions"
-          element={<PatientPrescriptions />}
-        />
-        <Route
-          path="/patient/appointments"
-          element={
-            <ProtectedRoute roles={["patient"]}>
-              <PatientAppointments />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/notifications"
-          element={
-            <ProtectedRoute roles={["patient"]}>
-              <Notifications />
-            </ProtectedRoute>
-          }
-        />
-        <Route path="/checkout/:appointmentId" element={<Checkout />} />
-        <Route path="/triage" element={<Triage />} />
-        <Route path="/doctor/:id" element={<Doctor />} />
-        <Route path="/patient/profile" element={<Profile />} />
-        <Route
-          path="/patient/dashboard"
-          element={
-            <ProtectedRoute roles={["patient"]}>
-              <DashboardContainer />
-            </ProtectedRoute>
-          }
-        />
+      {/* Patient */}
+      <Route path="/search" element={<Search />} />
+      <Route path="/booking/:doctorId" element={<Booking />} />
+      <Route path="/teleconsult/:roomId" element={<Teleconsult />} />
+      <Route path="/patient/prescriptions" element={<PatientPrescriptions />} />
+      <Route
+        path="/patient/appointments"
+        element={
+          <ProtectedRoute roles={["patient"]}>
+            <PatientAppointments />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/notifications"
+        element={
+          <ProtectedRoute roles={["patient"]}>
+            <Notifications />
+          </ProtectedRoute>
+        }
+      />
+      <Route path="/checkout/:appointmentId" element={<Checkout />} />
+      <Route path="/triage" element={<Triage />} />
+      <Route path="/doctor/:id" element={<Doctor />} />
+      <Route path="/patient/profile" element={<Profile />} />
+      <Route
+        path="/patient/dashboard"
+        element={
+          <ProtectedRoute roles={["patient"]}>
+            <DashboardContainer />
+          </ProtectedRoute>
+        }
+      />
 
-        {/* Professionnel */}
-        <Route
-          path="/pro/dashboard"
-          element={
-            <ProtectedRoute roles={["doctor", "nurse", "pro"]}>
-              <ProDashboard />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/pro/calendar"
-          element={
-            <ProtectedRoute roles={["doctor", "nurse", "pro"]}>
-              <ProCalendar />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/pro/availabilities"
-          element={
-            <ProtectedRoute roles={["doctor", "nurse", "pro"]}>
-              <Availabilities />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/pro/patients"
-          element={
-            <ProtectedRoute roles={["doctor", "nurse", "pro"]}>
-              <ProPatients />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/pro/prescriptions"
-          element={
-            <ProtectedRoute roles={["doctor", "nurse", "pro"]}>
-              <ProPrescriptions />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/pro/prescriptions/editor/:prescriptionId?"
-          element={
-            <ProtectedRoute roles={["doctor", "nurse", "pro"]}>
-              <PrescriptionsEditor />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/pro/prescriptions/new"
-          element={
-            <ProtectedRoute roles={["doctor", "nurse", "pro"]}>
-              <PrescriptionsEditor />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/pro/teleconsult"
-          element={
-            <ProtectedRoute roles={["doctor", "nurse", "pro"]}>
-              <ProTeleconsult />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/pro/profile"
-          element={
-            <ProtectedRoute roles={["doctor", "nurse", "pro"]}>
-              <ProProfile />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/pro/profilpro"
-          element={
-            <ProtectedRoute roles={["doctor", "nurse", "pro"]}>
-              <Profilpro />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/pro/settings"
-          element={
-            <ProtectedRoute roles={["doctor", "nurse", "pro"]}>
-              <ProSettings />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/pro/billing"
-          element={
-            <ProtectedRoute roles={["doctor", "nurse", "pro"]}>
-              <Billing />
-            </ProtectedRoute>
-          }
-        />
+      {/* Professionnel */}
+      <Route
+        path="/pro/dashboard"
+        element={
+          <ProtectedRoute roles={["doctor", "nurse", "pro"]}>
+            <ProDashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/pro/calendar"
+        element={
+          <ProtectedRoute roles={["doctor", "nurse", "pro"]}>
+            <ProCalendar />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/pro/availabilities"
+        element={
+          <ProtectedRoute roles={["doctor", "nurse", "pro"]}>
+            <Availabilities />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/pro/patients"
+        element={
+          <ProtectedRoute roles={["doctor", "nurse", "pro"]}>
+            <ProPatients />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/pro/prescriptions"
+        element={
+          <ProtectedRoute roles={["doctor", "nurse", "pro"]}>
+            <ProPrescriptions />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/pro/prescriptions/editor/:prescriptionId?"
+        element={
+          <ProtectedRoute roles={["doctor", "nurse", "pro"]}>
+            <PrescriptionsEditor />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/pro/prescriptions/new"
+        element={
+          <ProtectedRoute roles={["doctor", "nurse", "pro"]}>
+            <PrescriptionsEditor />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/pro/teleconsult"
+        element={
+          <ProtectedRoute roles={["doctor", "nurse", "pro"]}>
+            <ProTeleconsult />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/pro/profile"
+        element={
+          <ProtectedRoute roles={["doctor", "nurse", "pro"]}>
+            <ProProfile />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/pro/profilpro"
+        element={
+          <ProtectedRoute roles={["doctor", "nurse", "pro"]}>
+            <Profilpro />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/pro/settings"
+        element={
+          <ProtectedRoute roles={["doctor", "nurse", "pro"]}>
+            <ProSettings />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/pro/billing"
+        element={
+          <ProtectedRoute roles={["doctor", "nurse", "pro"]}>
+            <Billing />
+          </ProtectedRoute>
+        }
+      />
 
-        {/* Admin */}
-        <Route
-          path="/admin/dashboard"
-          element={
-            <ProtectedRoute roles={["admin"]}>
-              <AdminDashboard />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/admin/users"
-          element={
-            <ProtectedRoute roles={["admin"]}>
-              <Users />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/admin/catalog"
-          element={
-            <ProtectedRoute roles={["admin"]}>
-              <Catalog />
-            </ProtectedRoute>
-          }
-        />
+      {/* Admin */}
+      <Route
+        path="/admin/dashboard"
+        element={
+          <ProtectedRoute roles={["admin"]}>
+            <AdminDashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/users"
+        element={
+          <ProtectedRoute roles={["admin"]}>
+            <Users />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/catalog"
+        element={
+          <ProtectedRoute roles={["admin"]}>
+            <Catalog />
+          </ProtectedRoute>
+        }
+      />
 
-        {/* Fallback */}
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </>
+      {/* Fallback */}
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
   );
 }

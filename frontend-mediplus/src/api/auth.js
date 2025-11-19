@@ -39,10 +39,14 @@ export const updateProfileRequest = async (token, payload) => {
   if (hasFile || hasBase64Photo) {
     const formData = new FormData();
 
+    // Filtrer pour n'inclure que les champs autorisés
+    const allowedFields = ["name", "email", "phone", "latitude", "longitude"];
+
     // Ajouter les champs non fichier
     Object.entries(payload || {}).forEach(([key, value]) => {
       if (key === "photo" || key === "photoFile") return;
-      if (value === null || value === undefined) return;
+      if (value === null || value === undefined || value === "") return;
+      if (!allowedFields.includes(key)) return;
       formData.append(key, value);
     });
 
@@ -70,7 +74,21 @@ export const updateProfileRequest = async (token, payload) => {
   delete jsonPayload.photoFile;
   delete jsonPayload.photo;
 
-  const { data } = await api.put("/profile", jsonPayload, {
+  // Filtrer pour n'inclure que les champs autorisés
+  const allowedFields = ["name", "email", "phone", "latitude", "longitude"];
+  const filteredPayload = {};
+  for (const field of allowedFields) {
+    if (
+      jsonPayload.hasOwnProperty(field) &&
+      jsonPayload[field] !== "" &&
+      jsonPayload[field] !== null &&
+      jsonPayload[field] !== undefined
+    ) {
+      filteredPayload[field] = jsonPayload[field];
+    }
+  }
+
+  const { data } = await api.put("/profile", filteredPayload, {
     headers: { Authorization: `Bearer ${token}` },
   });
   return data;
