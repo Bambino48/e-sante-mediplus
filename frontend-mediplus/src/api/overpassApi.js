@@ -309,8 +309,7 @@ export const searchHealthcareEstablishments = async (
   userPosition,
   radius = 5000,
   searchQuery = "",
-  specialtyFilter = "",
-  useFallback = false // Indicateur pour éviter la récursion
+  specialtyFilter = ""
 ) => {
   // Utiliser une position par défaut si aucune n'est fournie
   const position = userPosition || { lat: 5.36, lng: -4.008 };
@@ -344,18 +343,12 @@ export const searchHealthcareEstablishments = async (
     }
 
     if (!response.ok) {
-      // Si timeout (504) ou autre erreur serveur, utiliser Abidjan comme fallback (une seule fois)
-      if ((response.status === 504 || response.status >= 500) && !useFallback) {
+      // Pour les timeouts et erreurs serveur, retourner un tableau vide au lieu d'utiliser un fallback
+      if (response.status === 504 || response.status >= 500) {
         console.warn(
-          `⚠️ Erreur serveur (${response.status}) avec les coordonnées utilisateur, utilisation d'Abidjan comme fallback`
+          `⚠️ Erreur serveur (${response.status}) - Aucun établissement trouvé dans cette zone`
         );
-        return searchHealthcareEstablishments(
-          { lat: 5.36, lng: -4.008 }, // Abidjan
-          radius,
-          searchQuery,
-          specialtyFilter,
-          true // useFallback = true pour éviter la récursion
-        );
+        return []; // Retourner un tableau vide au lieu d'utiliser un fallback
       }
       throw new Error(`Erreur HTTP: ${response.status}`);
     }

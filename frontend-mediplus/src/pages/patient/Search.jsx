@@ -19,6 +19,7 @@ export default function Search() {
   const [realTimeItems, setRealTimeItems] = useState([]); // Items provenant d'Overpass
   const [isLoading, setIsLoading] = useState(false);
   const [searchFunction, setSearchFunction] = useState(null);
+  const [infoMessage, setInfoMessage] = useState(""); // Message d'information pour l'utilisateur
 
   // État pour les filtres avancés
   const [wheelchairAccessible, setWheelchairAccessible] = useState(false);
@@ -513,6 +514,16 @@ export default function Search() {
             </div>
           </div>
 
+          {/* Message d'information */}
+          {infoMessage && (
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+              <div className="flex items-center gap-2">
+                <span className="text-amber-600">ℹ️</span>
+                <p className="text-sm text-amber-800">{infoMessage}</p>
+              </div>
+            </div>
+          )}
+
           <ResultsList items={allItems} isLoading={isLoading} />
         </div>
 
@@ -532,6 +543,7 @@ export default function Search() {
             onItemsUpdate={handleItemsUpdate}
             onSearchRequest={handleSearchFunctionUpdate}
             onLoadingStateUpdate={handleLoadingStateUpdate}
+            onInfoMessageUpdate={setInfoMessage}
             onSelect={(it) => {
               const el = document.getElementById(`card-${it.id}`);
               el?.scrollIntoView({ behavior: "smooth", block: "center" });

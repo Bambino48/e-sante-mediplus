@@ -119,11 +119,13 @@ export default function MapWithMarkers({
   onItemsUpdate, // Callback pour mettre à jour les éléments trouvés
   onSearchRequest, // Nouvelle prop pour exposer la fonction de recherche
   onLoadingStateUpdate, // Callback pour l'état de chargement
+  onInfoMessageUpdate, // Callback pour les messages d'information
 }) {
   const [realTimeItems, setRealTimeItems] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [lastSearchQuery, setLastSearchQuery] = useState("");
   const [canSearch, setCanSearch] = useState(false);
+  const [infoMessage, setInfoMessage] = useState(""); // Message d'information pour l'utilisateur
   const onItemsUpdateRef = useRef(onItemsUpdate);
   const isLoadingRef = useRef(isLoading); // Mettre à jour les refs quand les valeurs changent
   useEffect(() => {
@@ -185,6 +187,21 @@ export default function MapWithMarkers({
             lng: est.lng,
           }))
         );
+
+        // Définir un message d'information selon les résultats
+        if (establishments.length === 0) {
+          const message =
+            "Aucun établissement de santé trouvé dans votre zone. Essayez d'élargir votre recherche ou vérifiez votre position.";
+          setInfoMessage(message);
+          if (onInfoMessageUpdate) {
+            onInfoMessageUpdate(message);
+          }
+        } else {
+          setInfoMessage(""); // Effacer le message si des résultats sont trouvés
+          if (onInfoMessageUpdate) {
+            onInfoMessageUpdate("");
+          }
+        }
 
         // Appliquer les filtres avancés
         let filteredEstablishments = establishments;
