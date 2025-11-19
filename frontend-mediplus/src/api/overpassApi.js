@@ -309,7 +309,8 @@ export const searchHealthcareEstablishments = async (
   userPosition,
   radius = 5000,
   searchQuery = "",
-  specialtyFilter = ""
+  specialtyFilter = "",
+  useFallback = false // Indicateur pour éviter la récursion
 ) => {
   // Utiliser une position par défaut si aucune n'est fournie
   const position = userPosition || { lat: 5.36, lng: -4.008 };
@@ -334,9 +335,28 @@ export const searchHealthcareEstablishments = async (
     });
 
     // Appel à l'API Overpass
-    const response = await fetch(url);
+    let response;
+    try {
+      response = await fetch(url);
+    } catch (error) {
+      console.warn("⚠️ Erreur réseau lors de l'appel Overpass:", error.message);
+      throw new Error(`Erreur réseau: ${error.message}`);
+    }
 
     if (!response.ok) {
+      // Si timeout (504) ou autre erreur serveur, utiliser Abidjan comme fallback (une seule fois)
+      if ((response.status === 504 || response.status >= 500) && !useFallback) {
+        console.warn(
+          `⚠️ Erreur serveur (${response.status}) avec les coordonnées utilisateur, utilisation d'Abidjan comme fallback`
+        );
+        return searchHealthcareEstablishments(
+          { lat: 5.36, lng: -4.008 }, // Abidjan
+          radius,
+          searchQuery,
+          specialtyFilter,
+          true // useFallback = true pour éviter la récursion
+        );
+      }
       throw new Error(`Erreur HTTP: ${response.status}`);
     }
 
@@ -428,6 +448,47 @@ export const searchHealthcareEstablishments = async (
 
       if (!data.elements || data.elements.length === 0) {
         return [];
+      }
+
+      // Si très peu de résultats, essayer avec un rayon plus large pour les zones peu denses
+      if (data.elements.length < 5 && radius <= 10000) {
+        console.log(
+          `🔍 Peu de résultats (${data.elements.length}), extension du rayon de recherche...`
+        );
+        const extendedRadius = Math.min(radius * 2, 20000); // Doubler le rayon, max 20km
+        const extendedQuery = buildOverpassQuery(
+          lat,
+          lng,
+          extendedRadius,
+          specialtyFilter
+        );
+        const extendedUrl = `${OVERPASS_API_URL}?data=${encodeURIComponent(
+          extendedQuery
+        )}`;
+
+        try {
+          const extendedResponse = await fetch(extendedUrl);
+          if (extendedResponse.ok) {
+            const extendedData = await extendedResponse.json();
+            console.log(
+              `📊 Recherche étendue: ${
+                extendedData.elements?.length || 0
+              } résultats avec rayon ${extendedRadius}m`
+            );
+
+            if (
+              extendedData.elements &&
+              extendedData.elements.length > data.elements.length
+            ) {
+              console.log(
+                `✅ Utilisation des résultats étendus (${extendedData.elements.length} vs ${data.elements.length})`
+              );
+              data = extendedData;
+            }
+          }
+        } catch (error) {
+          console.warn("⚠️ Échec de la recherche étendue:", error.message);
+        }
       }
     }
 

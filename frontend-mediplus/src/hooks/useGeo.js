@@ -25,16 +25,18 @@ export function useGeo() {
         const lat = pos.coords.latitude;
         const lng = pos.coords.longitude;
 
-        // Validation des coordonnées : vérifier si elles sont plausibles pour la Côte d'Ivoire
-        // La Côte d'Ivoire est entre 4°N-11°N et 2°W-9°W (lng: -9 à -2)
-        // Éviter les coordonnées dans l'océan Atlantique (lng > -2 ou lng < -9)
-        const isValidLocation = lat >= 4 && lat <= 11 && lng >= -9 && lng <= -2;
+        // Validation des coordonnées : vérifier si elles sont dans la région de la Côte d'Ivoire
+        // Limites larges pour inclure toute la région ivoirienne et zones adjacentes
+        const isInIvoryCoastRegion =
+          lat >= 4.0 && lat <= 11.0 && lng >= -9.0 && lng <= -2.0;
 
-        if (isValidLocation) {
+        // Accepter toutes les coordonnées valides dans la région
+        // La gestion des zones avec peu de données sera faite côté API
+        if (isInIvoryCoastRegion) {
           setCoords({ lat, lng });
         } else {
           console.warn(
-            `⚠️ Coordonnées invalides détectées (${lat}, ${lng}), utilisation de la position par défaut`
+            `⚠️ Coordonnées hors région ivoirienne détectées (${lat}, ${lng}), utilisation de la position par défaut`
           );
           setCoords(null); // Utiliser le fallback
         }
