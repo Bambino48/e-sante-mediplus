@@ -396,6 +396,18 @@ export default function Appointments({ useLayout = true }) {
     return true;
   });
 
+  // Fonction pour calculer les jours restants de manière précise
+  const getDaysRemaining = (scheduledDate) => {
+    const now = new Date();
+    const appointmentDate = new Date(scheduledDate);
+    const diffTime = appointmentDate - now;
+    const diffDays = diffTime / (1000 * 60 * 60 * 24);
+
+    if (diffDays < 0) return 0; // Rendez-vous passé
+    if (diffDays < 1) return 0; // Aujourd'hui
+    return Math.floor(diffDays); // Nombre de jours complets restants
+  };
+
   const handleCancel = (id) => {
     toast(
       (t) => (
@@ -475,7 +487,7 @@ export default function Appointments({ useLayout = true }) {
       </div>
 
       {/* Filtres */}
-      <div className="flex gap-2">
+      <div className="flex gap-2 mb-6">
         <button
           onClick={() => setFilter("upcoming")}
           className={`px-4 py-2 rounded-lg transition ${
@@ -513,7 +525,7 @@ export default function Appointments({ useLayout = true }) {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-linear-to-r from-cyan-50 to-blue-50 dark:from-cyan-900/20 dark:to-blue-900/20 border border-cyan-200 dark:border-cyan-800 rounded-xl p-6 shadow-sm"
+          className="bg-linear-to-r from-cyan-50 to-blue-50 dark:from-cyan-900/20 dark:to-blue-900/20 border border-cyan-200 dark:border-cyan-800 rounded-xl p-6 shadow-sm mb-6"
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -580,14 +592,7 @@ export default function Appointments({ useLayout = true }) {
             <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mb-1">
               <span>Statut du rendez-vous</span>
               <span>
-                {Math.max(
-                  0,
-                  Math.ceil(
-                    (new Date(nextAppointment.scheduled_at) - now) /
-                      (1000 * 60 * 60 * 24)
-                  )
-                )}{" "}
-                jours restants
+                {getDaysRemaining(nextAppointment.scheduled_at)} jours restants
               </span>
             </div>
             <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
@@ -615,7 +620,7 @@ export default function Appointments({ useLayout = true }) {
 
       {/* Liste des rendez-vous */}
       {filteredAppointments.length === 0 ? (
-        <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-12 text-center">
+        <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-12 text-center mt-6">
           <Calendar className="h-16 w-16 text-slate-400 mx-auto mb-4" />
           <p className="text-slate-600 dark:text-slate-400 text-lg">
             {filter === "upcoming"
@@ -632,7 +637,7 @@ export default function Appointments({ useLayout = true }) {
           </button>
         </div>
       ) : (
-        <div className="grid gap-4">
+        <div className="grid gap-4 mt-6">
           {filteredAppointments.map((apt) => (
             <AppointmentCard
               key={apt.id}
