@@ -22,7 +22,22 @@ export function useGeo() {
     setHasAttempted(true);
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        setCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+
+        // Validation des coordonnées : vérifier si elles sont plausibles pour la Côte d'Ivoire
+        // La Côte d'Ivoire est entre 4°N-11°N et 2°W-9°W (lng: -9 à -2)
+        // Éviter les coordonnées dans l'océan Atlantique (lng > -2 ou lng < -9)
+        const isValidLocation = lat >= 4 && lat <= 11 && lng >= -9 && lng <= -2;
+
+        if (isValidLocation) {
+          setCoords({ lat, lng });
+        } else {
+          console.warn(
+            `⚠️ Coordonnées invalides détectées (${lat}, ${lng}), utilisation de la position par défaut`
+          );
+          setCoords(null); // Utiliser le fallback
+        }
         setLoading(false);
       },
       (err) => {

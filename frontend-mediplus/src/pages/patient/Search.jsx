@@ -1,4 +1,4 @@
-import { Heart, MapPin, Search as SearchIcon, Star } from "lucide-react";
+import { Heart, MapPin, Search as SearchIcon } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import DoctorCard from "../../components/DoctorCard.jsx";
 import MapWithMarkers from "../../components/MapWithMarkers.jsx";
@@ -8,7 +8,7 @@ import { useGeo } from "../../hooks/useGeo.js";
 import { useFavoritesStore } from "../../store/favoritesStore.js";
 
 export default function Search() {
-  const { coords, detect, setCoords } = useGeo();
+  const { coords, detect, setCoords, loading } = useGeo();
 
   // État de recherche
   const [q, setQ] = useState("");
@@ -19,6 +19,12 @@ export default function Search() {
   const [realTimeItems, setRealTimeItems] = useState([]); // Items provenant d'Overpass
   const [isLoading, setIsLoading] = useState(false);
   const [searchFunction, setSearchFunction] = useState(null);
+
+  // État pour les filtres avancés
+  const [wheelchairAccessible, setWheelchairAccessible] = useState(false);
+  const [openNow, setOpenNow] = useState(false);
+  const [hasPhone, setHasPhone] = useState(false);
+  const [hasWebsite, setHasWebsite] = useState(false);
 
   // État pour afficher tous les médecins
   const [showAllDoctors, setShowAllDoctors] = useState(false);
@@ -86,30 +92,85 @@ export default function Search() {
     }
   }, [setCoords]);
 
+  // Fonction pour géocoder une adresse manuelle
+  const geocodeLocation = async (locationString) => {
+    if (!locationString || locationString.trim().length < 2) {
+      return null;
+    }
+
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
+          locationString + ", Côte d'Ivoire"
+        )}&limit=1&countrycodes=ci`
+      );
+
+      if (!response.ok) {
+        throw new Error("Erreur de géocodage");
+      }
+
+      const data = await response.json();
+
+      if (data && data.length > 0) {
+        const { lat, lon } = data[0];
+        return { lat: parseFloat(lat), lng: parseFloat(lon) };
+      }
+
+      return null;
+    } catch (error) {
+      console.error("Erreur lors du géocodage:", error);
+      return null;
+    }
+  };
+
+  // Déclencher automatiquement la recherche quand on arrive avec des paramètres URL
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const hasSearchParams =
+      urlParams.has("q") || urlParams.has("location") || urlParams.has("lat");
+
+    // Ne déclencher que si on a des paramètres de recherche et que la fonction est prête
+    if (
+      hasSearchParams &&
+      q.trim().length >= 2 &&
+      searchFunction &&
+      !isLoading
+    ) {
+      console.log(
+        "🔍 Recherche automatique déclenchée depuis les paramètres URL"
+      );
+      handleManualSearch();
+    }
+  }, [q, searchFunction, isLoading]); // Dépendances importantes
+
   // Fonction pour déclencher la recherche manuellement
   const handleManualSearch = useCallback(async () => {
     // Validation des prérequis
-    if (!coords) {
-      return;
-    }
-
-    if (q.trim().length < 3) {
+    if (q.trim().length < 2) {
+      console.warn(
+        "❌ Recherche impossible: requête trop courte (minimum 2 caractères)"
+      );
       return;
     }
 
     if (!searchFunction) {
+      console.warn(
+        "❌ Recherche impossible: fonction de recherche non disponible"
+      );
       return;
     }
 
+    console.log("🔍 Démarrage de la recherche manuelle...");
     setIsLoading(true);
     try {
       await searchFunction();
-    } catch {
-      // TODO: Afficher un message d'erreur à l'utilisateur
+      console.log("✅ Recherche terminée");
+    } catch (error) {
+      console.error("❌ Erreur lors de la recherche:", error);
     } finally {
       setIsLoading(false);
     }
-  }, [coords, q, searchFunction]); // Dépendances optimisées
+  }, [q, searchFunction]); // Dépendances optimisées
 
   // Callback pour recevoir la fonction de recherche du composant Map
   const handleSearchFunctionUpdate = (searchFunc) => {
@@ -305,14 +366,36 @@ export default function Search() {
               <div className="flex items-center gap-2 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2">
                 <MapPin className="h-5 w-5 text-slate-400" />
                 <input
-                  onChange={(e) =>
-                    setCoords((c) => ({ ...(c || {}), manual: e.target.value }))
-                  }
-                  placeholder="Localisation (ex: Abobo)"
+                  onChange={async (e) => {
+                    const locationString = e.target.value;
+                    if (locationString.trim().length >= 3) {
+                      // Essayer de géocoder l'adresse
+                      const geocodedCoords = await geocodeLocation(
+                        locationString
+                      );
+                      if (geocodedCoords) {
+                        setCoords(geocodedCoords);
+                        console.log(
+                          "📍 Localisation géocodée:",
+                          geocodedCoords
+                        );
+                      } else {
+                        // Si le géocodage échoue, stocker la chaîne pour référence
+                        setCoords({ manual: locationString });
+                      }
+                    } else {
+                      setCoords({ manual: locationString });
+                    }
+                  }}
+                  placeholder="Localisation (ex: Abobo, Plateau, Yopougon)"
                   className="bg-transparent outline-none w-full text-sm"
                 />
-                <button onClick={detect} className="btn-ghost text-xs">
-                  Me localiser
+                <button
+                  onClick={detect}
+                  disabled={loading}
+                  className="btn-ghost text-xs disabled:opacity-50"
+                >
+                  {loading ? "..." : "Me localiser"}
                 </button>
               </div>
             </div>
@@ -323,24 +406,34 @@ export default function Search() {
                 onChange={(e) => setSpecialty(e.target.value)}
               >
                 <option value="">Tous les établissements</option>
-                <optgroup label="👨‍⚕️ Médecins">
-                  <option>Cardiologie</option>
-                  <option>Pédiatrie</option>
-                  <option>Gynécologie</option>
-                  <option>Dermatologie</option>
-                  <option>Médecine générale</option>
-                </optgroup>
                 <optgroup label="🏥 Centres médicaux">
-                  <option>Centre médical</option>
-                  <option>Clinique</option>
-                  <option>Hôpital</option>
+                  <option value="hospital">Hôpital</option>
+                  <option value="clinic">Clinique</option>
+                  <option value="medical_center">Centre médical</option>
                 </optgroup>
-                <optgroup label="💊 Pharmacies">
-                  <option>Pharmacie</option>
+                <optgroup label="👨‍⚕️ Médecins par spécialité">
+                  <option value="general_practitioner">
+                    Médecine générale
+                  </option>
+                  <option value="cardiologist">Cardiologie</option>
+                  <option value="pediatrician">Pédiatrie</option>
+                  <option value="gynecologist">Gynécologie</option>
+                  <option value="dermatologist">Dermatologie</option>
+                  <option value="ophthalmologist">Ophtalmologie</option>
+                  <option value="orthopedic">Orthopédie</option>
+                  <option value="neurologist">Neurologie</option>
+                  <option value="psychiatrist">Psychiatrie</option>
+                  <option value="dentist">Dentiste</option>
+                  <option value="surgeon">Chirurgie</option>
                 </optgroup>
-                <optgroup label="🔬 Laboratoires">
-                  <option>Laboratoire</option>
-                  <option>Analyses médicales</option>
+                <optgroup label="💊 Pharmacies & Laboratoires">
+                  <option value="pharmacy">Pharmacie</option>
+                  <option value="laboratory">Laboratoire d'analyses</option>
+                </optgroup>
+                <optgroup label="🏋️ Soins spécialisés">
+                  <option value="physiotherapist">Kinésithérapie</option>
+                  <option value="radiology">Radiologie</option>
+                  <option value="emergency">Urgences</option>
                 </optgroup>
               </select>
               <select
@@ -373,6 +466,51 @@ export default function Search() {
                 <option value={50}>50 km</option>
               </select>
             </div>
+
+            {/* Filtres avancés */}
+            <div className="mt-4 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700">
+              <h3 className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">
+                🔍 Filtres avancés (OSM)
+              </h3>
+              <div className="grid sm:grid-cols-2 gap-3">
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={wheelchairAccessible}
+                    onChange={(e) => setWheelchairAccessible(e.target.checked)}
+                    className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  ♿ Accessible aux fauteuils roulants
+                </label>
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={openNow}
+                    onChange={(e) => setOpenNow(e.target.checked)}
+                    className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  🕐 Ouvert maintenant
+                </label>
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={hasPhone}
+                    onChange={(e) => setHasPhone(e.target.checked)}
+                    className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  📞 Avec numéro de téléphone
+                </label>
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={hasWebsite}
+                    onChange={(e) => setHasWebsite(e.target.checked)}
+                    className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  🌐 Avec site web
+                </label>
+              </div>
+            </div>
           </div>
 
           <ResultsList items={allItems} isLoading={isLoading} />
@@ -386,6 +524,11 @@ export default function Search() {
             itemsWithoutCoords={itemsWithoutCoords}
             userPosition={coords}
             searchQuery={q}
+            specialty={specialty}
+            wheelchairAccessible={wheelchairAccessible}
+            openNow={openNow}
+            hasPhone={hasPhone}
+            hasWebsite={hasWebsite}
             onItemsUpdate={handleItemsUpdate}
             onSearchRequest={handleSearchFunctionUpdate}
             onLoadingStateUpdate={handleLoadingStateUpdate}
@@ -484,10 +627,16 @@ function ResultCard({ item }) {
   const favorites = useFavoritesStore((s) => s.favorites);
   const toggle = useFavoritesStore((s) => s.toggle);
   const isFav = favorites.has(item.id);
+
   return (
     <div id={`card-${item.id}`} className="card">
       <div className="flex gap-3">
-        <div className="h-16 w-16 rounded-xl bg-slate-200/60 dark:bg-slate-800/60" />
+        <div
+          className="h-16 w-16 rounded-xl flex items-center justify-center text-2xl"
+          style={{ backgroundColor: item.color + "20", color: item.color }}
+        >
+          {item.emoji}
+        </div>
         <div className="flex-1">
           <div className="flex items-center justify-between">
             <div className="font-semibold">{item.name}</div>
@@ -504,18 +653,38 @@ function ResultCard({ item }) {
             </button>
           </div>
           <div className="text-sm text-slate-500">
-            {item.specialty} • {item.languages?.join(", ")}
+            {item.specialty || item.type} • {item.distance_km} km
           </div>
-          <div className="mt-1 flex items-center gap-3 text-sm">
-            <span className="inline-flex items-center gap-1">
-              <Star className="h-4 w-4" /> {item.rating}
-            </span>
-            <span>À ~{item.distance_km ?? "-"} km</span>
-            <span>Prochain créneau : {item.nextSlot}</span>
+          <div className="mt-1 flex flex-wrap items-center gap-2 text-xs">
+            {item.phone && (
+              <span className="inline-flex items-center gap-1 bg-green-100 text-green-700 px-2 py-1 rounded">
+                📞 {item.phone}
+              </span>
+            )}
+            {item.website && (
+              <span className="inline-flex items-center gap-1 bg-blue-100 text-blue-700 px-2 py-1 rounded">
+                🌐 Site web
+              </span>
+            )}
+            {item.wheelchair && (
+              <span className="inline-flex items-center gap-1 bg-purple-100 text-purple-700 px-2 py-1 rounded">
+                ♿ Accessible
+              </span>
+            )}
+            {item.opening_hours && (
+              <span className="inline-flex items-center gap-1 bg-orange-100 text-orange-700 px-2 py-1 rounded">
+                🕐 Horaires
+              </span>
+            )}
           </div>
+          <div className="mt-2 text-sm text-slate-600">{item.address}</div>
           <div className="mt-3 flex gap-2">
-            <button className="btn-secondary">Détails</button>
-            <button className="btn-primary">Réserver</button>
+            <button className="btn-secondary text-xs">Voir sur la carte</button>
+            {item.phone && (
+              <a href={`tel:${item.phone}`} className="btn-primary text-xs">
+                Appeler
+              </a>
+            )}
           </div>
         </div>
       </div>

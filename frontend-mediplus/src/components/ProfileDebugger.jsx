@@ -67,11 +67,19 @@ export default function ProfileDebugger() {
             LocalStorage Cache:
           </div>
           <pre className="text-xs bg-slate-800 p-2 rounded overflow-auto max-h-32">
-            {JSON.stringify(
-              JSON.parse(localStorage.getItem("cachedUser") || "{}"),
-              null,
-              2
-            )}
+            {(() => {
+              try {
+                const cachedUser = localStorage.getItem("cachedUser") || "{}";
+                return JSON.stringify(JSON.parse(cachedUser), null, 2);
+              } catch (error) {
+                return `Erreur de parsing JSON: ${
+                  error.message
+                }\nValeur brute: ${
+                  localStorage.getItem("cachedUser")?.substring(0, 100) ||
+                  "null"
+                }`;
+              }
+            })()}
           </pre>
         </div>
 
