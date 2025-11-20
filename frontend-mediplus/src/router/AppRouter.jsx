@@ -52,6 +52,8 @@ import Triage from "../pages/patient/Triage.jsx";
 import About from "../pages/static/About.jsx";
 import Contact from "../pages/static/Contact.jsx";
 import Pricing from "../pages/static/Pricing.jsx";
+import Security from "../pages/static/Security.jsx";
+import Terms from "../pages/static/Terms.jsx";
 
 // 🔧 Containers
 
@@ -67,6 +69,8 @@ export default function AppRouter() {
       <Route path="/pricing" element={<Pricing />} />
       <Route path="/about" element={<About />} />
       <Route path="/contact" element={<Contact />} />
+      <Route path="/terms" element={<Terms />} />
+      <Route path="/security" element={<Security />} />
 
       {/* Patient */}
       <Route path="/search" element={<Search />} />

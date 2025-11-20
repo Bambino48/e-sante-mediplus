@@ -399,15 +399,29 @@ class AdminController extends Controller
     // GET /api/admin/profile
     public function getProfile(Request $request)
     {
-        // Pour les tests, retourner un profil fictif d'admin
+        // Pour les tests, utiliser un utilisateur admin de la base de données
         // En production, utiliser $request->user()
+        $user = User::where('role', 'admin')->first();
+        if (!$user) {
+            // Créer un utilisateur admin de test si aucun n'existe
+            $user = User::firstOrCreate(
+                ['email' => 'admin@mediplus.ci'],
+                [
+                    'name' => 'Administrateur MediPlus',
+                    'password' => bcrypt('password'),
+                    'role' => 'admin',
+                    'phone' => '+225 01 02 03 04 05'
+                ]
+            );
+        }
+
         $profile = [
-            'id' => 1,
-            'name' => 'Administrateur MediPlus',
-            'email' => 'admin@mediplus.ci',
-            'phone' => '+225 01 02 03 04 05',
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'phone' => $user->phone ?? '+225 01 02 03 04 05',
             'bio' => 'Administrateur principal de la plateforme MediPlus. Responsable de la gestion et de la maintenance du système.',
-            'photo_url' => null,
+            'photo_url' => $user->photo ? asset('storage/' . $user->photo) : null,
             'location' => 'Abidjan, Côte d\'Ivoire',
             'timezone' => 'Africa/Abidjan',
             'language' => 'fr',
@@ -417,9 +431,9 @@ class AdminController extends Controller
                 'system_alerts' => true,
                 'user_registrations' => false,
             ],
-            'role' => 'admin',
-            'created_at' => '2024-01-01T00:00:00.000000Z',
-            'updated_at' => now()->toISOString(),
+            'role' => $user->role,
+            'created_at' => $user->created_at?->toISOString() ?? '2024-01-01T00:00:00.000000Z',
+            'updated_at' => $user->updated_at?->toISOString() ?? now()->toISOString(),
         ];
 
         return response()->json(['profile' => $profile]);
@@ -428,18 +442,25 @@ class AdminController extends Controller
     // PUT /api/admin/profile
     public function updateProfile(Request $request)
     {
-        // Pour les tests, simuler un utilisateur admin
+        // Pour les tests, utiliser un utilisateur admin de la base de données
         // En production, utiliser $request->user()
-        $user = (object) [
-            'id' => 1,
-            'name' => 'Administrateur MediPlus',
-            'email' => 'admin@mediplus.ci',
-            'photo' => null
-        ];
+        $user = User::where('role', 'admin')->first();
+        if (!$user) {
+            // Créer un utilisateur admin de test si aucun n'existe
+            $user = User::firstOrCreate(
+                ['email' => 'admin@mediplus.ci'],
+                [
+                    'name' => 'Administrateur MediPlus',
+                    'password' => bcrypt('password'),
+                    'role' => 'admin',
+                    'phone' => '+225 01 02 03 04 05'
+                ]
+            );
+        }
 
         $data = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email',
+            'name' => 'sometimes|required|string|max:255',
+            'email' => 'sometimes|required|email',
             'phone' => 'nullable|string|max:20',
             'bio' => 'nullable|string|max:500',
             'location' => 'nullable|string|max:255',
@@ -469,10 +490,11 @@ class AdminController extends Controller
 
             $path = $file->store('avatars', 'public');
             $user->photo = $path;
-        } elseif (!empty($data['photo']) && is_string($data['photo']) && Str::startsWith($data['photo'], 'data:')) {
+        } elseif ($request->has('photo') && is_string($request->input('photo')) && Str::startsWith($request->input('photo'), 'data:')) {
             // Cas 2: Upload base64 (data URI)
-            if (preg_match('/^data:image\/(\w+);base64,/', $data['photo'], $type)) {
-                $imageData = substr($data['photo'], strpos($data['photo'], ',') + 1);
+            $photoData = $request->input('photo');
+            if (preg_match('/^data:image\/(\w+);base64,/', $photoData, $type)) {
+                $imageData = substr($photoData, strpos($photoData, ',') + 1);
                 $imageData = base64_decode($imageData);
 
                 if ($imageData === false) {
@@ -497,9 +519,10 @@ class AdminController extends Controller
             } else {
                 return response()->json(['message' => 'Format d\'image base64 invalide.'], 422);
             }
-        } elseif (array_key_exists('photo', $data)) {
+        } elseif ($request->has('photo')) {
             // Cas 3: Chaîne vide ou null - supprimer la photo
-            if ($data['photo'] === '' || $data['photo'] === null) {
+            $photoValue = $request->input('photo');
+            if ($photoValue === '' || $photoValue === null) {
                 if ($user->photo) {
                     Storage::disk('public')->delete($user->photo);
                 }
@@ -509,25 +532,31 @@ class AdminController extends Controller
 
         // Pour les tests, simuler la mise à jour
         // En production, mettre à jour l'utilisateur authentifié
+        $user->name = $request->input('name', $user->name);
+        $user->email = $request->input('email', $user->email);
+        $user->phone = $request->input('phone', $user->phone);
+        // La photo est déjà mise à jour plus haut dans le code
+        $user->save();
+
         $profile = [
             'id' => $user->id,
-            'name' => $data['name'],
-            'email' => $data['email'],
-            'phone' => $data['phone'] ?? '+225 01 02 03 04 05',
-            'bio' => $data['bio'] ?? 'Administrateur principal de la plateforme MediPlus.',
+            'name' => $user->name,
+            'email' => $user->email,
+            'phone' => $user->phone ?? '+225 01 02 03 04 05',
+            'bio' => $request->input('bio', 'Administrateur principal de la plateforme MediPlus.'),
             'photo_url' => $user->photo ? asset('storage/' . $user->photo) : null,
-            'location' => $data['location'] ?? 'Abidjan, Côte d\'Ivoire',
-            'timezone' => $data['timezone'] ?? 'Africa/Abidjan',
-            'language' => $data['language'] ?? 'fr',
-            'notifications' => $data['notifications'] ?? [
+            'location' => $request->input('location', 'Abidjan, Côte d\'Ivoire'),
+            'timezone' => $request->input('timezone', 'Africa/Abidjan'),
+            'language' => $request->input('language', 'fr'),
+            'notifications' => $request->input('notifications', [
                 'email' => true,
                 'reports' => true,
                 'system_alerts' => true,
                 'user_registrations' => false,
-            ],
+            ]),
             'role' => 'admin',
-            'created_at' => '2024-01-01T00:00:00.000000Z',
-            'updated_at' => now()->toISOString(),
+            'created_at' => $user->created_at?->toISOString() ?? '2024-01-01T00:00:00.000000Z',
+            'updated_at' => $user->updated_at?->toISOString() ?? now()->toISOString(),
         ];
 
         return response()->json([
