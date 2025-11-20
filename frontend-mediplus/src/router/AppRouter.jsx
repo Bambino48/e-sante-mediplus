@@ -20,6 +20,8 @@ import ProSettings from "../pages/pro/Settings.jsx";
 import ProTeleconsult from "../pages/pro/Teleconsult.jsx";
 
 // 🧑‍💼 Administrateur
+import AddDoctor from "../pages/admin/AddDoctor.jsx";
+import AddPharmacy from "../pages/admin/AddPharmacy.jsx";
 import Catalog from "../pages/admin/Catalog.jsx";
 import AdminDashboard from "../pages/admin/Dashboard.jsx";
 import Moderation from "../pages/admin/Moderation.jsx";
@@ -255,6 +257,26 @@ export default function AppRouter() {
           <ProtectedRoute roles={["admin"]}>
             <AdminLayout>
               <Moderation />
+            </AdminLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/add-doctor"
+        element={
+          <ProtectedRoute roles={["admin"]}>
+            <AdminLayout>
+              <AddDoctor />
+            </AdminLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/add-pharmacy"
+        element={
+          <ProtectedRoute roles={["admin"]}>
+            <AdminLayout>
+              <AddPharmacy />
             </AdminLayout>
           </ProtectedRoute>
         }

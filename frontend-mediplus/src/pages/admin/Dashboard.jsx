@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Line } from "react-chartjs-2";
+import { Link } from "react-router-dom";
 import { getReports, listPharmacies, listUsers } from "../../api/admin.js";
 import AdminCard from "../../components/AdminCard.jsx";
 import { useToastContext } from "../../context/ToastProvider.jsx";
@@ -618,21 +619,21 @@ export default function AdminDashboard() {
 
         {/* ================= Quick Actions ================= */}
         <div className="mt-12 flex gap-3 flex-wrap">
-          <a
-            href="/admin/add-doctor"
+          <Link
+            to="/admin/add-doctor"
             className="px-4 py-2 rounded-lg bg-cyan-600 text-white hover:bg-cyan-700 transition"
           >
             <UserPlus className="inline h-4 w-4 mr-2" />
             {t.addDoctor}
-          </a>
+          </Link>
 
-          <a
-            href="/admin/add-pharmacy"
+          <Link
+            to="/admin/add-pharmacy"
             className="px-4 py-2 rounded-lg bg-teal-600 text-white hover:bg-teal-700 transition"
           >
             <PlusCircle className="inline h-4 w-4 mr-2" />
             {t.addPharmacy}
-          </a>
+          </Link>
         </div>
 
         {/* ================= Shortcuts ================= */}

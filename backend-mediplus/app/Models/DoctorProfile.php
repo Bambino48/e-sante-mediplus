@@ -9,18 +9,31 @@ class DoctorProfile extends Model
 {
     protected $fillable = [
         'user_id',
-        'city',
+        'specialty',
+        'license_number',
         'address',
+        'city',
+        'country',
+        'bio',
+        'experience_years',
+        'consultation_fee',
+        'languages',
+        'availability',
+        'is_available',
+        'rating',
+        'professional_document',
         'phone',
         'fees',
-        'bio',
-        'rating',
         'primary_specialty',
-        'professional_document',
     ];
 
     protected $casts = [
         'rating' => 'float',
+        'experience_years' => 'integer',
+        'consultation_fee' => 'decimal:2',
+        'is_available' => 'boolean',
+        'languages' => 'array',
+        'availability' => 'array',
     ];
 
     public function user()

@@ -46,6 +46,112 @@ class AdminController extends Controller
         ]);
     }
 
+    // POST /api/admin/doctors
+    public function createDoctor(Request $request)
+    {
+        $data = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email',
+            'phone' => 'required|string|max:20',
+            'specialty' => 'required|string|max:255',
+            'license_number' => 'nullable|string|max:255',
+            'address' => 'nullable|string|max:500',
+            'city' => 'nullable|string|max:255',
+            'country' => 'nullable|string|max:255',
+            'bio' => 'nullable|string|max:1000',
+            'experience_years' => 'nullable|integer|min:0',
+            'consultation_fee' => 'nullable|numeric|min:0',
+            'languages' => 'nullable|array',
+            'availability' => 'nullable|array',
+        ]);
+
+        // Créer l'utilisateur avec le rôle doctor
+        $user = User::create([
+            'name' => $data['name'],
+            'email' => $data['email'],
+            'password' => bcrypt(Str::random(12)), // Mot de passe temporaire
+            'role' => 'doctor',
+            'phone' => $data['phone'],
+            'is_verified' => false,
+        ]);
+
+        // Créer le profil médecin
+        DoctorProfile::create([
+            'user_id' => $user->id,
+            'specialty' => $data['specialty'],
+            'license_number' => $data['license_number'],
+            'address' => $data['address'],
+            'city' => $data['city'],
+            'country' => $data['country'],
+            'bio' => $data['bio'],
+            'experience_years' => $data['experience_years'] ?? 0,
+            'consultation_fee' => $data['consultation_fee'] ?? 0,
+            'languages' => json_encode($data['languages'] ?? ['Français']),
+            'availability' => json_encode($data['availability'] ?? []),
+            'is_available' => true,
+        ]);
+
+        return response()->json([
+            'message' => 'Médecin créé avec succès',
+            'doctor' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'phone' => $user->phone,
+                'role' => $user->role,
+                'specialty' => $data['specialty'],
+                'is_verified' => $user->is_verified,
+            ]
+        ], 201);
+    }
+
+    // POST /api/admin/pharmacies
+    public function createPharmacy(Request $request)
+    {
+        $data = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:pharmacies,email',
+            'phone' => 'required|string|max:20',
+            'address' => 'required|string|max:500',
+            'city' => 'required|string|max:255',
+            'country' => 'nullable|string|max:255',
+            'postal_code' => 'nullable|string|max:10',
+            'latitude' => 'nullable|numeric',
+            'longitude' => 'nullable|numeric',
+            'license_number' => 'nullable|string|max:255',
+            'manager_name' => 'nullable|string|max:255',
+            'description' => 'nullable|string|max:1000',
+            'opening_hours' => 'nullable|array',
+            'services' => 'nullable|array',
+            'emergency_contact' => 'nullable|string|max:20',
+        ]);
+
+        $pharmacy = Pharmacy::create([
+            'name' => $data['name'],
+            'email' => $data['email'],
+            'phone' => $data['phone'],
+            'address' => $data['address'],
+            'city' => $data['city'],
+            'country' => $data['country'] ?? 'Côte d\'Ivoire',
+            'postal_code' => $data['postal_code'],
+            'latitude' => $data['latitude'],
+            'longitude' => $data['longitude'],
+            'license_number' => $data['license_number'],
+            'manager_name' => $data['manager_name'],
+            'description' => $data['description'],
+            'opening_hours' => json_encode($data['opening_hours'] ?? []),
+            'services' => json_encode($data['services'] ?? []),
+            'emergency_contact' => $data['emergency_contact'],
+            'is_active' => true,
+            'is_verified' => false,
+        ]);
+
+        return response()->json([
+            'message' => 'Pharmacie créée avec succès',
+            'pharmacy' => $pharmacy
+        ], 201);
+    }
+
     // GET /api/admin/catalog
     public function catalog()
     {
