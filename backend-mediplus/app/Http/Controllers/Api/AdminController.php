@@ -9,6 +9,8 @@ use App\Models\DoctorProfile;
 use App\Models\PatientProfile;
 use App\Models\Appointment;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class AdminController extends Controller
 {
@@ -286,5 +288,145 @@ class AdminController extends Controller
 
         // Ici on sauvegarderait dans une table settings
         return response()->json(['message' => 'Paramètres mis à jour']);
+    }
+
+    // GET /api/admin/profile
+    public function getProfile(Request $request)
+    {
+        // Pour les tests, retourner un profil fictif d'admin
+        // En production, utiliser $request->user()
+        $profile = [
+            'id' => 1,
+            'name' => 'Administrateur MediPlus',
+            'email' => 'admin@mediplus.ci',
+            'phone' => '+225 01 02 03 04 05',
+            'bio' => 'Administrateur principal de la plateforme MediPlus. Responsable de la gestion et de la maintenance du système.',
+            'photo_url' => null,
+            'location' => 'Abidjan, Côte d\'Ivoire',
+            'timezone' => 'Africa/Abidjan',
+            'language' => 'fr',
+            'notifications' => [
+                'email' => true,
+                'reports' => true,
+                'system_alerts' => true,
+                'user_registrations' => false,
+            ],
+            'role' => 'admin',
+            'created_at' => '2024-01-01T00:00:00.000000Z',
+            'updated_at' => now()->toISOString(),
+        ];
+
+        return response()->json(['profile' => $profile]);
+    }
+
+    // PUT /api/admin/profile
+    public function updateProfile(Request $request)
+    {
+        // Pour les tests, simuler un utilisateur admin
+        // En production, utiliser $request->user()
+        $user = (object) [
+            'id' => 1,
+            'name' => 'Administrateur MediPlus',
+            'email' => 'admin@mediplus.ci',
+            'photo' => null
+        ];
+
+        $data = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email',
+            'phone' => 'nullable|string|max:20',
+            'bio' => 'nullable|string|max:500',
+            'location' => 'nullable|string|max:255',
+            'timezone' => 'nullable|string|max:50',
+            'language' => 'nullable|string|in:fr,en',
+            'notifications' => 'nullable|array',
+            'notifications.email' => 'boolean',
+            'notifications.reports' => 'boolean',
+            'notifications.system_alerts' => 'boolean',
+            'notifications.user_registrations' => 'boolean',
+        ]);
+
+        // Traitement de la photo (adaptation de la logique d'AuthController)
+        if ($request->hasFile('photo') && $request->file('photo')->isValid()) {
+            // Cas 1: Upload de fichier (multipart/form-data)
+            $file = $request->file('photo');
+
+            // Validation du type d'image
+            $request->validate([
+                'photo' => 'image|mimes:jpeg,png,jpg,gif|max:2048'
+            ]);
+
+            // Supprimer l'ancienne photo si elle existe
+            if ($user->photo) {
+                Storage::disk('public')->delete($user->photo);
+            }
+
+            $path = $file->store('avatars', 'public');
+            $user->photo = $path;
+        } elseif (!empty($data['photo']) && is_string($data['photo']) && Str::startsWith($data['photo'], 'data:')) {
+            // Cas 2: Upload base64 (data URI)
+            if (preg_match('/^data:image\/(\w+);base64,/', $data['photo'], $type)) {
+                $imageData = substr($data['photo'], strpos($data['photo'], ',') + 1);
+                $imageData = base64_decode($imageData);
+
+                if ($imageData === false) {
+                    return response()->json(['message' => 'Données image base64 invalides.'], 422);
+                }
+
+                $extension = $type[1] === 'jpeg' ? 'jpg' : $type[1];
+
+                // Validation de l'extension
+                if (!in_array($extension, ['jpg', 'jpeg', 'png', 'gif'])) {
+                    return response()->json(['message' => 'Type d\'image non supporté.'], 422);
+                }
+
+                // Supprimer l'ancienne photo si elle existe
+                if ($user->photo) {
+                    Storage::disk('public')->delete($user->photo);
+                }
+
+                $filename = 'avatars/' . $user->id . '_' . time() . '.' . $extension;
+                Storage::disk('public')->put($filename, $imageData);
+                $user->photo = $filename;
+            } else {
+                return response()->json(['message' => 'Format d\'image base64 invalide.'], 422);
+            }
+        } elseif (array_key_exists('photo', $data)) {
+            // Cas 3: Chaîne vide ou null - supprimer la photo
+            if ($data['photo'] === '' || $data['photo'] === null) {
+                if ($user->photo) {
+                    Storage::disk('public')->delete($user->photo);
+                }
+                $user->photo = null;
+            }
+        }
+
+        // Pour les tests, simuler la mise à jour
+        // En production, mettre à jour l'utilisateur authentifié
+        $profile = [
+            'id' => $user->id,
+            'name' => $data['name'],
+            'email' => $data['email'],
+            'phone' => $data['phone'] ?? '+225 01 02 03 04 05',
+            'bio' => $data['bio'] ?? 'Administrateur principal de la plateforme MediPlus.',
+            'photo_url' => $user->photo ? asset('storage/' . $user->photo) : null,
+            'location' => $data['location'] ?? 'Abidjan, Côte d\'Ivoire',
+            'timezone' => $data['timezone'] ?? 'Africa/Abidjan',
+            'language' => $data['language'] ?? 'fr',
+            'notifications' => $data['notifications'] ?? [
+                'email' => true,
+                'reports' => true,
+                'system_alerts' => true,
+                'user_registrations' => false,
+            ],
+            'role' => 'admin',
+            'created_at' => '2024-01-01T00:00:00.000000Z',
+            'updated_at' => now()->toISOString(),
+        ];
+
+        return response()->json([
+            'message' => 'Profil mis à jour avec succès',
+            'profile' => $profile
+        ]);
     }
 }

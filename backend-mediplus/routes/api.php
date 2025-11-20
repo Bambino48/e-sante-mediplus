@@ -162,6 +162,8 @@ Route::prefix('admin')->group(function () {
     Route::put('/moderation/{id}/status', [AdminController::class, 'updateReportStatus']);
     Route::get('/settings', [AdminController::class, 'settings']);
     Route::put('/settings', [AdminController::class, 'updateSettings']);
+    Route::get('/profile', [AdminController::class, 'getProfile']);
+    Route::put('/profile', [AdminController::class, 'updateProfile']);
 });
 
 // ===========================================================
