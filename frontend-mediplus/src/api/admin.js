@@ -1,48 +1,41 @@
-// src/api/admin.js
+import api from "./axiosInstance.js";
 
-const DB = {
-    users: [
-        { id: "1", name: "Dr. Marie Kouassi", role: "doctor", verified: true },
-        { id: "2", name: "Aïcha Koné", role: "patient", verified: true },
-        { id: "3", name: "Admin Central", role: "admin", verified: true },
-    ],
-    pharmacies: [
-        { id: "ph1", name: "Pharmacie du Soleil", address: "Abidjan", phone: "01020304", on_guard: true },
-        { id: "ph2", name: "Pharmacie de la Paix", address: "Yamoussoukro", phone: "05060708", on_guard: false },
-    ],
-};
-
-export async function listUsers() {
-    return { items: DB.users };
+export async function listUsers(params = {}) {
+  const res = await api.get(`/admin/users`, { params });
+  // Backend may return { users: [...] } or a paginated response
+  if (Array.isArray(res.data)) return res.data;
+  if (res.data.users) return res.data.users;
+  return res.data;
 }
 
-export async function listPharmacies() {
-    return { items: DB.pharmacies };
+export async function updateUserRole(id, role) {
+  const res = await api.put(`/admin/users/${id}`, { role });
+  return res.data;
+}
+
+export async function getReports(params = {}) {
+  const res = await api.get(`/admin/reports`, { params });
+  // Expecting summary object like { users: N, doctors: N, pharmacies: N, ... }
+  return res.data;
+}
+
+export async function listPharmacies(params = {}) {
+  const res = await api.get(`/admin/pharmacies`, { params });
+  // Expecting paginated shape { items: [], total, ... } or an array
+  return res.data;
 }
 
 export async function createPharmacy(data) {
-    const id = crypto.randomUUID();
-    const newPh = { id, ...data };
-    DB.pharmacies.push(newPh);
-    return { pharmacy: newPh };
-}
-
-export async function updatePharmacy(id, data) {
-    const idx = DB.pharmacies.findIndex((p) => p.id === id);
-    if (idx === -1) throw new Error("Pharmacie introuvable");
-    DB.pharmacies[idx] = { ...DB.pharmacies[idx], ...data };
-    return { pharmacy: DB.pharmacies[idx] };
+  const res = await api.post(`/admin/pharmacies`, data);
+  return res.data;
 }
 
 export async function deletePharmacy(id) {
-    const idx = DB.pharmacies.findIndex((p) => p.id === id);
-    if (idx !== -1) DB.pharmacies.splice(idx, 1);
-    return { ok: true };
+  const res = await api.delete(`/admin/pharmacies/${id}`);
+  return res.data;
 }
 
 export async function toggleUserVerification(id) {
-    const u = DB.users.find((x) => x.id === id);
-    if (!u) throw new Error("Utilisateur introuvable");
-    u.verified = !u.verified;
-    return { user: u };
+  const res = await api.post(`/admin/users/${id}/toggle-verification`);
+  return res.data;
 }

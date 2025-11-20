@@ -22,7 +22,14 @@ import ProTeleconsult from "../pages/pro/Teleconsult.jsx";
 // 🧑‍💼 Administrateur
 import Catalog from "../pages/admin/Catalog.jsx";
 import AdminDashboard from "../pages/admin/Dashboard.jsx";
+import Moderation from "../pages/admin/Moderation.jsx";
+import Monetization from "../pages/admin/Monetization.jsx";
+import Reports from "../pages/admin/Reports.jsx";
+import Settings from "../pages/admin/Settings.jsx";
 import Users from "../pages/admin/Users.jsx";
+
+// 🔧 Layouts
+import AdminLayout from "../layouts/AdminLayout.jsx";
 
 // 🔐 Authentification
 import Login from "../pages/auth/Login.jsx";
@@ -196,7 +203,9 @@ export default function AppRouter() {
         path="/admin/dashboard"
         element={
           <ProtectedRoute roles={["admin"]}>
-            <AdminDashboard />
+            <AdminLayout>
+              <AdminDashboard />
+            </AdminLayout>
           </ProtectedRoute>
         }
       />
@@ -204,7 +213,9 @@ export default function AppRouter() {
         path="/admin/users"
         element={
           <ProtectedRoute roles={["admin"]}>
-            <Users />
+            <AdminLayout>
+              <Users />
+            </AdminLayout>
           </ProtectedRoute>
         }
       />
@@ -212,12 +223,52 @@ export default function AppRouter() {
         path="/admin/catalog"
         element={
           <ProtectedRoute roles={["admin"]}>
-            <Catalog />
+            <AdminLayout>
+              <Catalog />
+            </AdminLayout>
           </ProtectedRoute>
         }
       />
-
-      {/* Fallback */}
+      <Route
+        path="/admin/monetization"
+        element={
+          <ProtectedRoute roles={["admin"]}>
+            <AdminLayout>
+              <Monetization />
+            </AdminLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/reports"
+        element={
+          <ProtectedRoute roles={["admin"]}>
+            <AdminLayout>
+              <Reports />
+            </AdminLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/moderation"
+        element={
+          <ProtectedRoute roles={["admin"]}>
+            <AdminLayout>
+              <Moderation />
+            </AdminLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/settings"
+        element={
+          <ProtectedRoute roles={["admin"]}>
+            <AdminLayout>
+              <Settings />
+            </AdminLayout>
+          </ProtectedRoute>
+        }
+      />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

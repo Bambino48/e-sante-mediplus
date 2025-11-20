@@ -101,6 +101,11 @@ export default function PatientDashboard() {
     error: appointmentError,
   } = useNextAppointment();
   const {
+    data: todayMedications,
+    isLoading: loadingTodayMedications,
+    error: todayMedicationsError,
+  } = usePatientTodayMedications();
+  const {
     data: notificationsData,
     isLoading: loadingNotifications,
     error: notificationsError,
@@ -125,9 +130,6 @@ export default function PatientDashboard() {
 
   const { data: activeTeleconsults, isLoading: loadingTeleconsults } =
     usePatientActiveTeleconsults();
-
-  const { data: todayMedications, isLoading: loadingTodayMedications } =
-    usePatientTodayMedications();
 
   // ✅ Gestionnaires de clics intelligents
   const handleAppointmentsClick = (e) => {
@@ -268,6 +270,10 @@ export default function PatientDashboard() {
                   <div className="flex items-center gap-2 text-cyan-600">
                     <Clock className="h-3 w-3 animate-spin" />
                     <span className="text-xs">Chargement...</span>
+                  </div>
+                ) : todayMedicationsError ? (
+                  <div className="text-xs text-red-600 dark:text-red-400">
+                    Erreur de chargement
                   </div>
                 ) : !isAuthenticated ? (
                   <div className="text-xs text-cyan-600 dark:text-cyan-400">
@@ -655,6 +661,10 @@ export default function PatientDashboard() {
               <div className="mt-3 flex items-center gap-2 text-slate-400">
                 <Clock className="h-4 w-4 animate-spin" />
                 <span className="text-sm">Chargement...</span>
+              </div>
+            ) : todayMedicationsError ? (
+              <div className="mt-3 text-sm text-red-600 dark:text-red-400">
+                Erreur de chargement des médicaments
               </div>
             ) : !isAuthenticated ? (
               <motion.div

@@ -119,6 +119,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/admin/users', [AdminController::class, 'users']);
     Route::put('/admin/users/{id}', [AdminController::class, 'updateRole']);
     Route::get('/admin/catalog', [AdminController::class, 'catalog']);
+    Route::get('/admin/pharmacies', [AdminController::class, 'catalog']); // Alias pour compatibilité frontend
     Route::get('/admin/reports', [AdminController::class, 'reports']);
 
     Route::get('/notifications', [NotificationController::class, 'index']);
